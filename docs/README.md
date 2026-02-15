@@ -6,10 +6,10 @@ SSDAM is a development, design, and AI collaborative operation system that defin
 
 ## Languages
 
-| Language | Path |
-|----------|------|
-| 🇰🇷 한국어 | [`ko/`](ko/) |
-| 🇺🇸 English | [`en/`](en/) |
+| Language | Path | Overview |
+|----------|------|----------|
+| 🇰🇷 한국어 | [`ko/`](ko/) | [`ko/README.md`](ko/00_overview/README.md) |
+| 🇺🇸 English | [`en/`](en/) | [`en/README.md`](en/00_overview/README.md) |
 
 ---
 
