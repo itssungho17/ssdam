@@ -20,7 +20,7 @@ used throughout SSDAM documentation.
 
 | Target | Prefix | Example Format | Pattern |
 |---|---|---|---|
-| Project | `PRJ` | `PRJ-001` | `^PRJ-[0-9]{3,}$` |
+| Quest | `QST` | `QST-20260216-001` | `^QST-[0-9]{8}-[0-9]{3}$` |
 | Requirement | `REQ` | `REQ-012` | `^REQ-[0-9]{3,}$` |
 | Stage | `STG` | `STG-03` | `^STG-[0-9]{2,}$` |
 | Execution | `EXE` | `EXE-0042` | `^EXE-[0-9]{3,}$` |
@@ -40,7 +40,7 @@ used throughout SSDAM documentation.
 - IDs are not reused within the same prefix.
 - Deleted item IDs are not reassigned.
 - If mid-operation insertion is necessary, increment the final number. (Insertion after `STG-02` can also use `STG-11`)
-- Human reading order and ID order may differ. Order is managed by `project-stage-map`.
+- Human reading order and ID order may differ. Order is managed by `quest-plan`.
 
 ---
 

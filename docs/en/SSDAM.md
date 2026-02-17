@@ -240,7 +240,7 @@ are not considered SSDAM-compatible.
 **Methodology**
 
 - `03_methodology/stage-design-guide.md`  
-- `03_methodology/project-planning-guide.md`  
+- `03_methodology/quest-planning-guide.md`  
 
 **Specifications & Definitions**
 

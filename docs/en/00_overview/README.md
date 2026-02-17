@@ -45,11 +45,12 @@ It helps first-time readers quickly understand the overall structure, reading or
 4. `07_reference/checkpoint.md`
 5. `04_templates/02_stage/stage-spec.template.md`
 
-### 4.3 When Operating a Project
-1. `03_methodology/project-planning-guide.md`
+### 4.3 When Operating a Quest
+1. `03_methodology/quest-planning-guide.md`
 2. `07_reference/traceability.md`
 3. `06_specs/id-metadata-conventions.md`
-4. `04_templates/01_project/*.template.md`
+4. `04_templates/01_entry/user-input.template.md`
+5. `04_templates/02_quest/quest-plan.template.md`
 
 ---
 
@@ -59,7 +60,7 @@ It helps first-time readers quickly understand the overall structure, reading or
 - [ ] Applied `execution -> artifact -> evaluation -> evidence -> checkpoint` sequence without omission.
 - [ ] Enforced that all judgments have Evidence links.
 - [ ] Predefined Recovery path for FAIL scenarios.
-- [ ] Applied common ID rules consistently across the entire project.
+- [ ] Applied common ID rules consistently across the entire quest.
 
 ---
 
