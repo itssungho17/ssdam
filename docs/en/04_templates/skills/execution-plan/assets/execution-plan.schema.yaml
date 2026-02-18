@@ -1,0 +1,44 @@
+# SSDAM Execution Plan Schema (v1.0.0)
+# source_template: execution-plan.template
+# input_files: [stage-spec.STG-XX.yaml, quest-seed.yaml]
+
+metadata:
+  quest_id: string            # from stage-spec
+  stage_id: string            # e.g., "STG-01"
+  stage_name: string          # from stage-spec
+  document_id: string         # "execution-plan"
+  version: string             # e.g., "v0.1.0"
+  timestamp: string           # ISO 8601
+  requirement_ids: list       # from stage-spec metadata.requirement_ids
+
+tech_stack:
+  backend: string             # from quest-seed constraints.backend_stack
+  frontend: string            # from quest-seed constraints.frontend_stack
+  project_root: string        # from quest-seed constraints.project_root
+
+tasks:
+  - task_id: string           # TASK-01 ~ TASK-05
+    task_name: string
+    task_type: string         # architecture | erd | ddl | backend | frontend
+    description: string
+    target_artifacts: list    # [ART-STG-XX-NNN, ...]
+    dependencies: list        # [TASK-XX, ...] or []
+    output_files: list        # ["{project_root}/docs/", ...] top-level dirs only
+    tech_context: string
+    acceptance_criteria: string  # verifiable completion check
+
+task_flow:
+  default_sequence: list      # [TASK-01, TASK-02, ...]
+  parallel_groups: list       # parallel task groups or []
+
+handoff:
+  next_element: string        # "execution.template"
+  execution_unit: string      # "task"
+  total_executions: integer   # tasks array length
+
+self_validation:
+  all_artifacts_covered: boolean
+  task_dependencies_acyclic: boolean
+  default_flow_complete: boolean
+  tech_stack_specified: boolean
+  all_paths_use_project_root: boolean

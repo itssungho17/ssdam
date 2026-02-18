@@ -1,0 +1,96 @@
+# SSDAM Quest Plan Schema (v1.0.0)
+# source_template: quest-plan.template
+# input_file: quest-seed.yaml
+
+metadata:
+  quest_id: string            # from quest-seed.yaml
+  document_id: string         # "quest-plan"
+  quest_owner: string         # from quest-seed.yaml
+  domain: string              # from quest-seed.yaml
+  version: string             # e.g., "v0.1.0"
+  timestamp: string           # ISO 8601
+
+governance:
+  roles:
+    - role_id: string         # quest_owner | stage_owner | agent
+      responsibility_scope: string
+      approval_scope: string
+      exclusion_scope: string
+
+  gates:                      # gate_id pattern: GATE-STG-{number}
+    - gate_id: string         # e.g., "GATE-STG-01"
+      stage_id: string        # e.g., "STG-01"
+      stage_name: string      # from quest-seed.yaml
+      gate_type: string       # automatic | human | hybrid
+      pass_condition: string
+      final_approver: string  # role_id
+
+  escalation_rules:
+    - rule_id: string         # ESC-FAIL-N | ESC-UNCERTAINTY | ESC-RISK
+      trigger_condition: string
+      threshold: string
+      escalation_target: string  # role_id
+      action: string
+
+stage_map:
+  dependencies:
+    - stage_id: string
+      predecessor_stage_id: string  # "none" for first stage
+      required_artifact: string     # "none" for first stage
+      dependency_rationale: string
+
+  branch_rules:
+    - stage_id: string
+      checkpoint_id: string   # CP-STG-{number}
+      on_pass: string         # next stage_id or "END"
+      on_fail: string         # RCV-STG-{number}
+
+  flow_diagram: string        # Mermaid graph TD syntax (block scalar)
+
+policies:
+  quality_policy:
+    - policy_id: string       # QPOL-{number}
+      quality_item: string
+      threshold: string
+      measurement_method: string
+      decision_criteria: string  # "PASS/FAIL" only
+
+  recovery_policy:
+    - policy_id: string       # RPOL-{number}
+      failure_type: string
+      max_retry: integer
+      allowed_rollback_scope: string
+      auto_or_manual: string  # auto | manual | auto-preferred
+      allowed_strategies: list  # [Re-execution, Correction, Re-stage, Rollback]
+      escalation_condition: string
+
+  traceability_policy:
+    - policy_id: string       # TPOL-{number}
+      record_item: string
+      required_link: string
+      retention_period: string
+      storage_location: string
+
+handoff:
+  next_template: string       # "stage-spec.template"
+  payload:
+    quest_id: string
+    quest_owner: string
+    quest_goal: string        # pass through from quest-seed.yaml
+    domain: string
+    stage_list: list          # YAML list, NOT quoted string
+    quest_plan_ref: string    # "quest-plan.yaml"
+  instruction: string         # block scalar
+
+self_validation:
+  all_stages_have_gate_and_approver: boolean
+  escalation_rules_defined: boolean
+  no_role_overlap: boolean
+  gate_types_valid: boolean
+  all_dependencies_artifact_based: boolean
+  no_circular_dependencies: boolean
+  all_fail_branches_have_recovery: boolean
+  all_quality_criteria_pass_fail: boolean
+  no_ambiguous_language: boolean
+  recovery_retry_and_rollback_defined: boolean
+  policy_ids_referenceable: boolean

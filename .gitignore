@@ -1,0 +1,6 @@
+agentskills/
+
+.venv/
+
+# Backend uploads
+**/backend/uploads/

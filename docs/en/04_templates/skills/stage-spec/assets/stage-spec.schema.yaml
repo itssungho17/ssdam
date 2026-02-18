@@ -1,0 +1,67 @@
+# SSDAM Stage Specification Schema (v1.0.0)
+# source_template: stage-spec.template
+# input_files: [quest-seed.yaml, quest-plan.yaml]
+
+metadata:
+  quest_id: string            # from quest-seed.yaml
+  stage_id: string            # e.g., "STG-01"
+  stage_name: string          # from quest-seed.yaml
+  document_id: string         # "stage-spec"
+  stage_owner: string         # "stage_owner"
+  version: string             # e.g., "v0.1.0"
+  timestamp: string           # ISO 8601
+  requirement_ids: list       # from quest-seed stages[target].mapped_requirements
+
+purpose:
+  statement: string           # single testable sentence
+  scope_included:
+    - string
+  scope_excluded:
+    - string
+
+input_contract:               # first stage: input_item = "none", artifact_id = "none"
+  - input_item: string
+    artifact_id: string       # from predecessor stage output or "none"
+    contract_requirement: string
+
+output_contract:              # artifact_id format: ART-STG-XX-NNN
+  - output_artifact: string
+    artifact_id: string       # e.g., "ART-STG-01-001"
+    contract_specification: string
+
+evaluation_criteria:
+  - criterion_id: string      # e.g., "CRIT-01"
+    criterion: string
+    policy_reference: string  # QPOL-XX from quest-plan
+    measurement_method: string
+    pass_threshold: string    # quantitative, PASS/FAIL decidable
+
+checkpoint:
+  checkpoint_id: string       # CP-STG-XX
+  gate_id: string             # GATE-STG-XX from quest-plan
+  gate_type: string           # automatic | human | hybrid
+  final_approver: string      # role_id
+  evaluation_policy_references: list  # [QPOL-XX, ...]
+  recovery_policy_reference: string   # RPOL-XX
+
+handoff:
+  next_stage_id: string       # from quest-plan branch_rules on_pass, or "END"
+  handoff_artifacts: list     # [ART-STG-XX-NNN, ...]
+  handoff_evidence: list      # [EVD-STG-XX-NNN, ...]
+
+recovery_mapping:
+  - failure_type: string
+    rpol_reference: string    # RPOL-XX from quest-plan
+    max_retry: integer
+    recovery_strategy: string # Re-execution | Correction | Re-stage | Rollback
+    escalation_trigger: string
+
+self_validation:
+  purpose_single_sentence_testable: boolean
+  input_output_contracts_verifiable: boolean
+  all_criteria_pass_fail_decidable: boolean
+  all_criteria_reference_policy_ids: boolean
+  checkpoint_gate_type_valid: boolean
+  recovery_references_rpol_ids: boolean
+  handoff_fields_complete: boolean
+  solid_principles_applied: boolean
