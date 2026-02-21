@@ -1,0 +1,8 @@
+{
+    "mission_owner": "Sung-Ho Son",
+    "project_context": {
+        "backend_stack": "FastAPI, Python, Pydantic, SqlModel",
+        "frontend_stack": "Svelte, TypeScript, TailwindCSS, Vite",
+        "database": "PostgreSQL"
+    }
+}

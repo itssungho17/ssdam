@@ -1,0 +1,254 @@
+# Frontend-Design Skill Output Template
+# This template defines the structure of frontend-design.TSK-NNN.md output document.
+# Generated at: .ssdam/{id}/output/design/frontend-design.TSK-NNN.md
+
+---
+
+document_type: "frontend-design"
+task_id: "TSK-NNN"
+generated_at: "ISO 8601 timestamp"
+
+source_documents:
+  - document: "architecture-design.TSK-NNN.md"
+    status: "required"
+    used_for: "domain entities, high-level API contract, module boundaries"
+
+  - document: "backend-design.TSK-NNN.md"
+    status: "optional"
+    used_for: "precise API endpoints, schema definitions"
+    present: "boolean"
+
+
+# PAGES AND ROUTES
+pages:
+  - page_name: "string"           # e.g., "Home", "Library", "UploadFlow"
+    route: "string"               # SvelteKit route: "/", "/library", "/upload/[id]"
+    purpose: "string"             # One-sentence description
+    access_roles: "string[]"      # Which user roles can access: ["user", "admin"]
+    layout: "string"              # Which layout component wraps this: "AppLayout"
+    components:
+      - name: "string"            # Components used on this page
+        category: "string"        # layout | feature | atomic
+
+    page_level_data:
+      description: "string"       # What data this page loads/manages
+      initial_load: "string"      # Which API endpoint(s) are called on mount
+      stored_in: "string"         # Which store(s) hold the page data
+
+
+# COMPONENT TREE AND DEFINITIONS
+components:
+  - component_name: "string"      # PascalCase, e.g., "MediaGrid"
+    file: "string"                # Relative path from project_root
+                                  # e.g., "src/lib/components/MediaGrid.svelte"
+    category: "string"           # page | layout | feature | atomic
+    description: "string"        # What this component does
+
+    props:
+      - name: "string"           # Prop name (camelCase)
+        type: "string"           # TypeScript type, e.g., "string", "MediaFile[]"
+        required: "boolean"      # Is this prop mandatory?
+        default: "any"           # Default value if optional
+        description: "string"    # What is this prop for?
+
+    events:
+      - name: "string"           # Event name, e.g., "select"
+        payload_type: "string"   # TypeScript type of event.detail
+        description: "string"    # When/why is this event dispatched?
+
+    state:
+      - name: "string"           # Local reactive state variable
+        type: "string"           # TypeScript type
+        description: "string"
+
+    stores_used:
+      - store_name: "string"     # e.g., "mediaFilesStore"
+        imported_from: "string"  # e.g., "src/lib/stores/mediaFiles"
+        accessed: "string[]"     # Which store values does this component read?
+        modified: "string[]"     # Which store values does this component write?
+
+
+# STATE MANAGEMENT (SVELTE STORES)
+stores:
+  - store_name: "string"         # camelCase, e.g., "mediaFilesStore"
+    file: "string"               # e.g., "src/lib/stores/mediaFiles.ts"
+    description: "string"        # What domain concept does this store manage?
+
+    state_interface:
+      name: "string"             # TypeScript interface name
+      fields:
+        - field_name: "string"
+          type: "string"         # TypeScript type
+          description: "string"
+
+    initial_state: "object"      # Concrete initial values
+
+    actions:
+      - action_name: "string"    # Function/method name
+        signature: "string"      # TypeScript signature, e.g., "async fetchFiles(): Promise<void>"
+        description: "string"    # What does this action do?
+        updates_fields: "string[]"  # Which state fields does it update?
+
+    derived_stores:
+      - name: "string"           # e.g., "selectedCount$"
+        description: "string"    # Computed value derivation
+
+
+# API INTEGRATION
+api_integration:
+  - api_client_file: "string"    # File that exports these functions
+                                  # e.g., "src/lib/api/mediaFiles.ts"
+
+    endpoints:
+      - endpoint_path: "string"  # e.g., "/api/media/files"
+        http_method: "string"    # GET, POST, PUT, DELETE, PATCH
+        function_name: "string"  # What function exports this call
+                                  # e.g., "fetchMediaFiles"
+
+        description: "string"    # What does this endpoint do?
+
+        trigger:
+          component: "string"    # Which component calls this?
+          user_action: "string"  # "user clicks button", "page loads", etc.
+
+        request:
+          type_name: "string"    # e.g., "UploadFileRequest" (null if no body)
+          fields: "string"       # Description of request fields if present
+
+        response:
+          type_name: "string"    # e.g., "MediaFile"
+          status_code: "number"  # 200, 201, etc.
+
+        error_handling:
+          loading_state: "string"  # How is loading indicated?
+                                   # e.g., "mediaFilesStore.loading"
+          error_state: "string"    # How is error indicated?
+                                   # e.g., "mediaFilesStore.error"
+          user_feedback: "string"  # What user sees on error?
+
+        auth_required: "boolean" # Does this endpoint require authentication?
+
+
+# UI/UX INTERACTION PATTERNS
+ui_interactions:
+  - interaction_name: "string"   # e.g., "double-click to open detail"
+    component: "string"          # Which component handles this?
+    trigger: "string"            # "double-click", "click", "type", "drag", etc.
+    behavior: "string"           # What happens? (open modal, navigate, filter, etc.)
+    state_change: "string"       # Which store updates? Which fields?
+    edge_cases: "string[]"       # Any special handling needed?
+
+
+# FILE STRUCTURE
+file_structure:
+  - path: "string"               # Relative to project_root
+    type: "string"               # file | directory
+    description: "string"        # Purpose of this file/dir
+
+    # Example entries:
+    # - path: "src/routes"
+    #   type: "directory"
+    #   description: "SvelteKit page routes"
+    #
+    # - path: "src/routes/+page.svelte"
+    #   type: "file"
+    #   description: "Home page component"
+    #
+    # - path: "src/lib/components"
+    #   type: "directory"
+    #   description: "Reusable Svelte components"
+    #
+    # - path: "src/lib/components/layout/AppLayout.svelte"
+    #   type: "file"
+    #   description: "Main application layout wrapper"
+    #
+    # - path: "src/lib/components/atomic/Button.svelte"
+    #   type: "file"
+    #   description: "Reusable button component"
+    #
+    # - path: "src/lib/components/features"
+    #   type: "directory"
+    #   description: "Feature-specific components"
+    #
+    # - path: "src/lib/stores"
+    #   type: "directory"
+    #   description: "Svelte stores for shared state"
+    #
+    # - path: "src/lib/stores/mediaFiles.ts"
+    #   type: "file"
+    #   description: "Store for media file state"
+    #
+    # - path: "src/lib/api"
+    #   type: "directory"
+    #   description: "API client functions"
+    #
+    # - path: "src/lib/api/mediaFiles.ts"
+    #   type: "file"
+    #   description: "API client for media file endpoints"
+    #
+    # - path: "src/lib/types"
+    #   type: "directory"
+    #   description: "TypeScript type definitions"
+    #
+    # - path: "src/lib/types/media.ts"
+    #   type: "file"
+    #   description: "TypeScript interfaces for media domain"
+    #
+    # - path: "tests"
+    #   type: "directory"
+    #   description: "Component and store tests"
+    #
+    # - path: "tests/components"
+    #   type: "directory"
+    #   description: "Vitest + Svelte Testing Library tests"
+
+
+# TEST STRATEGY
+test_strategy:
+  test_runner: "string"          # e.g., "Vitest"
+  test_library: "string"         # e.g., "Svelte Testing Library"
+
+  component_tests:
+    location: "string"           # e.g., "tests/components/**/*.test.ts"
+    coverage_target: "number"    # Percentage, e.g., 80
+
+    test_categories:
+      - category: "string"       # "rendering", "props", "events", "stores"
+        components: "string[]"   # Which components? Or "all"?
+        test_scenarios: "string[]"  # Specific scenarios to test
+
+  store_tests:
+    location: "string"           # e.g., "tests/stores/**/*.test.ts"
+    coverage_target: "number"
+
+    scenarios:
+      - store: "string"
+        test_cases:
+          - name: "string"       # e.g., "fetchFiles updates items and clears error"
+            action: "string"     # Which action is called?
+            expected_state: "string"  # What should state look like after?
+
+  api_client_tests:
+    location: "string"           # e.g., "tests/api/**/*.test.ts"
+    approach: "string"           # "mock fetch", "MSW (Mock Service Worker)", etc.
+
+
+# SELF-VALIDATION
+self_validation:
+  passed: "boolean"              # Did all validation checks pass?
+
+  checks:
+    - name: "string"             # e.g., "All scope_included items have pages"
+      status: "string"           # "pass" | "fail"
+      details: "string"
+
+  failed_checks: "object[]"      # If passed=false, list failures here
+    # - check: "string"
+    #   error: "string"
+    #   remediation: "string"
+
+  coverage_notes:
+    pages_defined: "number"      # How many pages?
+    components_defined: "number" # How many components?
+    stores_defined: "number"     # How many stores?
+    api_endpoints_integrated: "number"  # How many API calls?

@@ -1,0 +1,251 @@
+# Frontend-Implementation Skill Output Template
+# NOTE: The main output is CODE written to project_root/
+# This template documents what was implemented (for logging/verification purposes).
+# File: .ssdam/{id}/output/implementation/frontend-implementation.TSK-NNN.contract.yaml
+
+---
+
+document_type: "frontend-implementation-contract"
+task_id: "TSK-NNN"
+generated_at: "ISO 8601 timestamp"
+status: "success | failed"
+
+
+# DELIVERABLES: Files created and code written
+
+deliverables:
+
+  # TypeScript type definitions
+  types:
+    - file: "src/lib/types/media.ts"
+      interfaces:
+        - name: "MediaFile"
+          fields: ["id", "filename", "size", "mimetype", "uploadedAt", "ownerId"]
+        - name: "UploadFileRequest"
+          fields: ["filename", "mimetype", "size"]
+
+    - file: "src/lib/types/auth.ts"
+      interfaces:
+        - name: "AuthState"
+          fields: ["token", "user", "isAuthenticated"]
+
+  # Svelte stores
+  stores:
+    - file: "src/lib/stores/mediaFiles.ts"
+      store_name: "mediaFilesStore"
+      store_type: "writable<MediaFilesState>"
+      exported_functions:
+        - name: "fetchFiles"
+          signature: "async () => Promise<void>"
+        - name: "uploadFile"
+          signature: "async (file: File) => Promise<MediaFile>"
+        - name: "deleteFile"
+          signature: "async (id: string) => Promise<void>"
+        - name: "selectFile"
+          signature: "(id: string) => void"
+
+    - file: "src/lib/stores/auth.ts"
+      store_name: "authStore"
+      store_type: "writable<AuthState>"
+      exported_functions:
+        - name: "login"
+          signature: "async (email: string, password: string) => Promise<void>"
+        - name: "logout"
+          signature: "() => void"
+
+  # API client functions
+  api_client:
+    - file: "src/lib/api/mediaFiles.ts"
+      functions:
+        - name: "fetchMediaFiles"
+          signature: "() => Promise<MediaFile[]>"
+          endpoint: "GET /api/media/files"
+        - name: "uploadFile"
+          signature: "(file: File) => Promise<MediaFile>"
+          endpoint: "POST /api/uploads"
+        - name: "deleteFile"
+          signature: "(id: string) => Promise<void>"
+          endpoint: "DELETE /api/media/files/:id"
+
+    - file: "src/lib/api/auth.ts"
+      functions:
+        - name: "login"
+          signature: "(email: string, password: string) => Promise<AuthResponse>"
+          endpoint: "POST /api/auth/login"
+
+  # Svelte components
+  components:
+    - file: "src/lib/components/atomic/Button.svelte"
+      component_name: "Button"
+      category: "atomic"
+      props: ["label: string", "disabled?: boolean", "type?: 'button' | 'submit'"]
+      events: ["click"]
+
+    - file: "src/lib/components/atomic/TextField.svelte"
+      component_name: "TextField"
+      category: "atomic"
+      props: ["label: string", "value: string", "placeholder?: string"]
+      events: ["change"]
+
+    - file: "src/lib/components/layout/AppLayout.svelte"
+      component_name: "AppLayout"
+      category: "layout"
+      slots: ["default"]
+
+    - file: "src/lib/components/features/MediaGallery/Grid.svelte"
+      component_name: "MediaGrid"
+      category: "feature"
+      props: ["items: MediaFile[]", "selectedIds: string[]"]
+      events: ["select", "delete"]
+      stores_used: ["mediaFilesStore"]
+
+    - file: "src/lib/components/features/MediaGallery/UploadModal.svelte"
+      component_name: "UploadModal"
+      category: "feature"
+      props: ["open: boolean"]
+      events: ["close", "upload"]
+      stores_used: ["mediaFilesStore"]
+
+  # SvelteKit page routes
+  routes:
+    - file: "src/routes/+page.svelte"
+      route: "/"
+      components_used: ["AppLayout"]
+      data_source: "home page content"
+
+    - file: "src/routes/library/+page.svelte"
+      route: "/library"
+      components_used: ["AppLayout", "MediaGrid", "UploadModal"]
+      data_source: "mediaFilesStore"
+      initial_load: "GET /api/media/files"
+
+    - file: "src/routes/[id]/+page.svelte"
+      route: "/[id]"
+      components_used: ["AppLayout", "DetailView"]
+      data_source: "dynamic from route params"
+
+  # Tests
+  tests:
+    - file: "tests/components/Button.test.ts"
+      test_count: 4
+      tested_component: "Button"
+      test_cases: ["renders with label", "dispatches click event", "disables when disabled=true", "applies size classes"]
+
+    - file: "tests/components/MediaGrid.test.ts"
+      test_count: 3
+      tested_component: "MediaGrid"
+      test_cases: ["renders items from props", "dispatches select event", "shows loading skeleton"]
+
+    - file: "tests/stores/mediaFiles.test.ts"
+      test_count: 5
+      tested_store: "mediaFilesStore"
+      test_cases: ["initializes with empty state", "fetchFiles updates items", "uploadFile adds item", "deleteFile removes item", "selectFile updates selection"]
+
+
+# VERIFICATION RESULTS
+
+verification:
+
+  typescript_check:
+    status: "passed"              # passed | failed
+    errors: "number"              # 0
+    warnings: "number"            # 0
+    command: "npm run check"
+
+  test_results:
+    status: "passed"              # passed | failed
+    total_tests: "number"         # e.g., 24
+    passed: "number"              # e.g., 24
+    failed: "number"              # e.g., 0
+    skipped: "number"             # e.g., 0
+    command: "npm run test"
+    test_files: ["tests/components/Button.test.ts", "tests/stores/mediaFiles.test.ts"]
+
+  build_result:
+    status: "passed"              # passed | failed
+    command: "npm run build"
+    build_time_seconds: "number"
+    output_size_bytes: "number"
+
+  acceptance_criteria:
+    - criterion: "Users can upload media files"
+      status: "met"               # met | unmet | partial
+      verification: "Feature test and component test pass; manual verification successful"
+
+    - criterion: "Users can browse media gallery"
+      status: "met"
+      verification: "MediaGrid component renders all items; pagination works"
+
+    - criterion: "All API calls include proper auth headers"
+      status: "met"
+      verification: "All api/*.ts functions checked; auth header verified in tests"
+
+    - criterion: "All async operations show loading states"
+      status: "met"
+      verification: "All components with async operations checked; loading skeleton and error messages present"
+
+  file_structure_validation:
+    status: "passed"              # passed | failed
+    expected_directories: ["src/lib/components", "src/lib/stores", "src/lib/api", "src/lib/types"]
+    actual_directories: ["src/lib/components", "src/lib/stores", "src/lib/api", "src/lib/types"]
+    missing_files: []
+    unexpected_files: []
+
+
+# IMPLEMENTATION SUMMARY
+
+summary:
+  total_files_created: "number"   # e.g., 24
+  lines_of_code: "number"         # e.g., 2847
+  total_test_lines: "number"      # e.g., 1200
+
+  breakdown_by_type:
+    types_files: "number"         # e.g., 2
+    types_interfaces: "number"    # e.g., 8
+    stores_files: "number"        # e.g., 2
+    store_actions: "number"       # e.g., 12
+    api_files: "number"           # e.g., 2
+    api_functions: "number"       # e.g., 8
+    components_atomic: "number"   # e.g., 5
+    components_feature: "number"  # e.g., 4
+    components_layout: "number"   # e.g., 2
+    page_routes: "number"         # e.g., 3
+    test_files: "number"          # e.g., 6
+
+  code_quality:
+    typescript_strict: "true"     # Strict mode enabled?
+    typescript_errors: "0"
+    typescript_warnings: "0"
+    eslint_pass: "true"           # Linter passed?
+    test_coverage_percent: "number"  # e.g., 85
+
+  time_metrics:
+    total_implementation_time_seconds: "number"
+    build_time_seconds: "number"
+    test_execution_time_seconds: "number"
+
+
+# NEXT STEPS
+
+next_steps:
+  - "Deploy to development/staging environment"
+  - "Run integration tests with live backend"
+  - "Conduct user acceptance testing (UAT)"
+  - "Deploy to production"
+  - "Monitor for errors and performance"
+
+
+# NOTES AND ISSUES
+
+notes: "Optional free-form notes about the implementation"
+
+known_issues: []
+  # - issue: "Description"
+  #   severity: "high|medium|low"
+  #   remediation: "How to fix"
+  #   affected_files: ["file1", "file2"]
+
+deviations_from_design: []
+  # - deviation: "Description of deviation from frontend-design"
+  #   reason: "Why was this changed?"
+  #   files_affected: ["file1"]

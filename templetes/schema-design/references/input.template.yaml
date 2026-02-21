@@ -1,0 +1,265 @@
+# Schema-Design Skill Input Schema Template
+#
+# This document defines the structure of inputs that the schema-design skill consumes.
+# It is a REFERENCE SCHEMA — not an actual execution artifact.
+#
+# Schema-design consumes TWO input files:
+# 1. task-spec.TSK-NNN.yaml (user provides the path)
+# 2. data-modeling.TSK-NNN.md (read from .ssdam/{id}/output/design/)
+
+---
+
+# ============================================================================
+# INPUT SOURCE 1: task-spec.TSK-NNN.yaml
+# ============================================================================
+#
+# The task-spec is the primary trigger file. The schema-design skill reads
+# specific sections from it.
+
+task_spec:
+  metadata:
+    # Required fields from task-spec
+    mission_id: "MIS-20260221-001"        # Copied to SQL file header
+    task_id: "TSK-001"                     # Used to derive output filename
+    task_name: "Upload Media Feature"      # Used as document title in SQL header
+    task_owner: "alice@example.com"        # For metadata only (optional)
+
+  execution_plan:
+    # Tech stack confirms database type and structure
+    tech_stack:
+      backend: "FastAPI, Pydantic, SqlModel"
+      frontend: "Svelte, TailwindCSS"
+      database: "PostgreSQL"               # Required: defines SQL dialect
+      project_root: "/home/user/project"   # Path to project repo
+
+    # Steps array should include schema-design step
+    steps:
+      - exec_id: "EXEC-03"
+        exec_type: "schema-design"          # This skill
+        description: "Generate DDL CREATE TABLE and CREATE INDEX statements"
+        acceptance_criteria: |
+          - schema-design.TSK-001.sql created with:
+            - CREATE TABLE for: users, media_files, comments, tags, comment_tags
+            - CREATE INDEX for all FK columns: owner_id, media_id, author_id, tag_id
+            - CREATE INDEX for search columns: filename, name
+            - CREATE INDEX for sort columns: created_at
+            - ON DELETE CASCADE for child tables
+            - gen_random_uuid() for all ID columns
+            - All tables have: id, created_at, updated_at columns
+
+---
+
+# ============================================================================
+# INPUT SOURCE 2: data-modeling.TSK-NNN.md
+# ============================================================================
+#
+# The data-modeling output is the REQUIRED PREREQUISITE for schema-design.
+# The skill reads these sections:
+
+data_modeling:
+  # Frontmatter from data-modeling
+  document_type: "data-modeling"
+  task_id: "TSK-001"
+  mission_id: "MIS-20260221-001"
+  source_document: "architecture-design.TSK-001.md"
+
+  # Entity definitions (each becomes a CREATE TABLE statement)
+  entities:
+    - entity_name: "MediaFile"
+      table_name: "media_files"
+      fields:
+        - name: "id"
+          type: "UUID"
+          nullable: false
+          default: "gen_random_uuid()"
+          unique: true
+        - name: "owner_id"
+          type: "UUID"
+          nullable: false
+          default: null
+          unique: false
+        - name: "filename"
+          type: "VARCHAR(255)"
+          nullable: false
+          default: null
+          unique: false
+        - name: "mime_type"
+          type: "VARCHAR(100)"
+          nullable: false
+          default: null
+          unique: false
+        - name: "size_bytes"
+          type: "INTEGER"
+          nullable: false
+          default: null
+          unique: false
+        - name: "storage_url"
+          type: "TEXT"
+          nullable: false
+          default: null
+          unique: false
+        - name: "is_public"
+          type: "BOOLEAN"
+          nullable: false
+          default: false
+          unique: false
+        - name: "created_at"
+          type: "TIMESTAMPTZ"
+          nullable: false
+          default: "NOW()"
+          unique: false
+        - name: "updated_at"
+          type: "TIMESTAMPTZ"
+          nullable: false
+          default: "NOW()"
+          unique: false
+      primary_key: "id"
+      indexes:
+        - name: "idx_media_files_owner_id"
+          columns: ["owner_id"]
+          unique: false
+        - name: "idx_media_files_filename"
+          columns: ["filename"]
+          unique: false
+        - name: "idx_media_files_created_at"
+          columns: ["created_at"]
+          unique: false
+
+    - entity_name: "Comment"
+      table_name: "comments"
+      fields:
+        - name: "id"
+          type: "UUID"
+          nullable: false
+          default: "gen_random_uuid()"
+          unique: true
+        - name: "media_id"
+          type: "UUID"
+          nullable: false
+          default: null
+          unique: false
+        - name: "author_id"
+          type: "UUID"
+          nullable: false
+          default: null
+          unique: false
+        - name: "content"
+          type: "TEXT"
+          nullable: false
+          default: null
+          unique: false
+        - name: "created_at"
+          type: "TIMESTAMPTZ"
+          nullable: false
+          default: "NOW()"
+          unique: false
+        - name: "updated_at"
+          type: "TIMESTAMPTZ"
+          nullable: false
+          default: "NOW()"
+          unique: false
+      primary_key: "id"
+      indexes:
+        - name: "idx_comments_media_id"
+          columns: ["media_id"]
+          unique: false
+        - name: "idx_comments_author_id"
+          columns: ["author_id"]
+          unique: false
+        - name: "idx_comments_created_at"
+          columns: ["created_at"]
+          unique: false
+
+  # Relationships (drive foreign key generation)
+  relationships:
+    - from_entity: "MediaFile"
+      to_entity: "User"
+      relationship_type: "one_to_many"
+      fk_field: "owner_id"
+      junction_table: null
+
+    - from_entity: "Comment"
+      to_entity: "MediaFile"
+      relationship_type: "one_to_many"
+      fk_field: "media_id"
+      junction_table: null
+
+    - from_entity: "Comment"
+      to_entity: "User"
+      relationship_type: "one_to_many"
+      fk_field: "author_id"
+      junction_table: null
+
+    - from_entity: "Comment"
+      to_entity: "Tag"
+      relationship_type: "many_to_many"
+      fk_field: null
+      junction_table: "comment_tags"
+
+  # Junction tables (for many-to-many relationships)
+  junction_tables:
+    - junction_table_name: "comment_tags"
+      left_entity: "Comment"
+      left_fk_column: "comment_id"
+      right_entity: "Tag"
+      right_fk_column: "tag_id"
+      fields:
+        - name: "comment_id"
+          type: "UUID"
+          nullable: false
+        - name: "tag_id"
+          type: "UUID"
+          nullable: false
+        - name: "created_at"
+          type: "TIMESTAMPTZ"
+          nullable: false
+          default: "NOW()"
+      primary_key: ["comment_id", "tag_id"]
+      indexes:
+        - name: "idx_comment_tags_comment_id"
+          columns: ["comment_id"]
+          unique: false
+        - name: "idx_comment_tags_tag_id"
+          columns: ["tag_id"]
+          unique: false
+
+---
+
+# ============================================================================
+# USAGE NOTES FOR AGENT
+# ============================================================================
+#
+# When schema-design skill is triggered:
+#
+# 1. User provides a task-spec path (e.g., ".ssdam/media-marketplace/output/task-spec.TSK-001.yaml")
+#
+# 2. Skill reads task-spec and extracts:
+#    - metadata (mission_id, task_id, task_name)
+#    - tech_stack.database (confirms PostgreSQL or other DBMS)
+#    - execution_plan.steps[] to find "schema-design" step (for acceptance criteria)
+#
+# 3. Skill derives workspace dir from task-spec path:
+#    - Input: ".ssdam/media-marketplace/output/task-spec.TSK-001.yaml"
+#    - Workspace: ".ssdam/media-marketplace/"
+#    - Design dir: ".ssdam/media-marketplace/output/design/"
+#
+# 4. Skill reads prerequisite:
+#    - ".ssdam/{id}/output/design/data-modeling.TSK-001.md"
+#    - MUST exist; if not found, stop and tell user to run /data-modeling first
+#
+# 5. Skill parses data-modeling output:
+#    - Extract entity definitions → generate CREATE TABLE statements
+#    - Extract relationships → generate FOREIGN KEY constraints
+#    - Extract junction_tables → generate CREATE TABLE for many-to-many
+#    - Extract indexes → generate CREATE INDEX statements
+#
+# 6. Skill writes output:
+#    - ".ssdam/{id}/output/design/schema-design.TSK-001.sql"
+#    - With all DDL CREATE TABLE, CREATE INDEX, and related statements
+#    - Ordered by table dependencies (referenced tables first)
+#
+# 7. Output SQL file is ready to execute:
+#    - psql -d database_name -f schema-design.TSK-001.sql
+#    - Creates all tables, indexes, and constraints
+#    - Assumes pgcrypto extension is available (for gen_random_uuid())
+

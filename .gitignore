@@ -1,6 +1,5 @@
+.cursor/
+.ssdam/
 agentskills/
 
 .venv/
-
-# Backend uploads
-**/backend/uploads/

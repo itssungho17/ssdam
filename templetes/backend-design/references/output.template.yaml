@@ -1,0 +1,223 @@
+# Agent Reference Schema — do NOT edit
+# This document describes the structure of the output backend-design.TSK-NNN.md file
+# that the backend-design skill produces.
+
+# OUTPUT FILE LOCATION
+# Path: .ssdam/{id}/output/design/backend-design.TSK-NNN.md
+#
+# EXAMPLE:
+# .ssdam/media-marketplace-20260221-001/output/design/backend-design.TSK-001.md
+#
+# NOTE: This is a MARKDOWN file, not YAML. This YAML describes its structure.
+
+---
+
+document_type: "backend-design"
+
+# Metadata section — appears at top of markdown file
+metadata:
+  # From input task_spec.metadata.mission_id
+  mission_id: ""
+
+  # From input task_spec.metadata.task_id
+  task_id: ""
+
+  # From input task_spec.metadata.task_name
+  task_name: ""
+
+  # ISO 8601 timestamp of when the design was created
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+# Technology stack section
+tech_stack:
+  backend: ""          # e.g., "FastAPI, Pydantic, SqlModel"
+  database: ""         # e.g., "PostgreSQL 15"
+  project_root: ""     # e.g., "/home/user/projects/media-marketplace"
+
+# API endpoints section — REST endpoints designed for this task
+api_endpoints:
+  # For each endpoint created in this task:
+  - method: ""         # GET | POST | PUT | PATCH | DELETE
+    path: ""           # e.g., /api/v1/media-files
+    description: ""    # One sentence describing the endpoint
+    auth_required: true
+    router_file: ""    # e.g., src/api/v1/media_files.py
+    request_schema: "" # Pydantic model name, or "empty"
+    response_schema: ""# Pydantic model name
+    status_codes:
+      success: 200
+      errors: [400, 401, 404, 422]
+    requirement_ids: []  # Which output_contract entries this satisfies
+
+# Pydantic request/response schemas section
+schemas:
+  # For each unique schema (request, response, or base):
+  - schema_name: ""     # e.g., MediaFileCreate, MediaFileResponse
+    schema_type: ""     # "request" | "response" | "base"
+    fields:
+      # For each field in the schema:
+      - name: ""
+        type: ""        # Python type hint (str, int, UUID, Optional[str], List[str])
+        required: true
+        validation: ""  # e.g., "min_length=1, max_length=255"
+        description: ""
+
+# Service layer section — business logic services
+services:
+  # For each service class designed for this task:
+  - service_name: ""    # e.g., MediaFileService
+    file: ""            # e.g., src/services/media_file_service.py
+    responsibility: ""  # One sentence
+    dependencies: []    # What this service depends on (repos, services)
+    methods:
+      # For each public method:
+      - name: ""
+        params: []      # List of parameter names and types
+        return_type: ""
+        description: ""
+
+# Repository layer section — data access abstraction
+repositories:
+  # For each repository (one per domain entity):
+  - repo_name: ""       # e.g., MediaFileRepository
+    entity: ""          # ORM model name, e.g., MediaFile
+    file: ""            # e.g., src/repositories/media_file_repository.py
+    methods:
+      # For each method (CRUD + custom queries):
+      - name: ""
+        params: []      # e.g., [session: AsyncSession, file_id: UUID]
+        return_type: ""
+        query_type: ""  # "select" | "insert" | "update" | "delete" | "custom"
+        description: ""
+
+# Error handling section
+error_handling:
+  # Custom exception classes to implement
+  exception_classes:
+    # For each custom exception:
+    - class_name: ""           # e.g., ResourceNotFoundError
+      http_status_code: ""     # e.g., 404
+      message_template: ""     # e.g., "{entity_type} with ID {id} not found"
+      description: ""
+
+  # Mapping of exceptions to HTTP status codes
+  http_mapping: {}
+    # Example:
+    # ResourceNotFoundError: 404
+    # UnauthorizedError: 401
+    # ForbiddenError: 403
+
+  # Error response schema structure
+  error_response_schema: ""
+
+# Authentication section
+authentication:
+  scheme: ""           # e.g., "JWT Bearer Token"
+  token_type: ""       # e.g., "JWT"
+  token_location: ""   # e.g., "Authorization header (Bearer token)"
+  token_payload: []    # e.g., ["sub (user_id)", "exp (expiration)", "roles (array)"]
+  validation_method: ""# e.g., "FastAPI Depends(get_current_user)"
+  protected_endpoints: []  # List of paths that require auth
+
+# Middleware and cross-cutting concerns section
+middleware:
+  cors_enabled: false
+  cors_origins: []     # e.g., ["http://localhost:3000", "https://example.com"]
+  rate_limiting: false
+  request_logging: false
+
+# Logging strategy section
+logging:
+  level: ""            # DEBUG | INFO | WARNING | ERROR
+  log_requests: false
+  log_responses: false
+  log_errors: false
+
+# File structure section — expected directory layout
+file_structure:
+  # For each directory/file that will be created:
+  - path: ""           # e.g., src/api/v1/media_files.py
+    description: ""    # What goes in this file
+    type: ""           # "file" | "directory"
+
+# Test strategy section
+test_strategy:
+  unit_tests:
+    location: ""       # e.g., tests/unit/services/
+    coverage: ""       # What is unit tested (service methods, schemas, etc.)
+    example_tests: []  # e.g., [test_create_media_file_success, ...]
+
+  integration_tests:
+    location: ""       # e.g., tests/integration/api/
+    coverage: ""       # What is integration tested (endpoints, auth, etc.)
+    example_tests: []  # e.g., [test_post_media_files_success, ...]
+
+  target_coverage: ""  # e.g., ">80%"
+
+# Self-validation section — proof that design is complete and correct
+self_validation:
+  # Did all checks pass?
+  passed: true
+
+  # If any check failed, list what failed and what was fixed
+  failed_checks: []
+
+  # Detailed validation results
+  checks:
+    # output_contract traceability: every deliverable is covered by an endpoint
+    output_contract_traceable: true
+    uncovered_deliverables: []
+
+    # Endpoint completeness: every endpoint has request/response schemas
+    endpoints_have_schemas: true
+    endpoints_missing_schemas: []
+
+    # Service/repository alignment: every service calls repos, not DB directly
+    service_repository_aligned: true
+    misaligned_services: []
+
+    # Auth consistency: all auth_required endpoints use Depends(get_current_user)
+    auth_endpoints_consistent: true
+    unprotected_endpoints: []
+
+    # File structure validity: all files are planned
+    file_structure_valid: true
+    invalid_paths: []
+
+    # Test coverage: all error cases are tested
+    test_coverage_complete: true
+    untested_scenarios: []
+
+---
+
+# NOTES FOR AGENT IMPLEMENTATION:
+#
+# 1. The markdown file is the actual output, not this YAML.
+#    This YAML describes the STRUCTURE of that markdown file.
+#
+# 2. Key sections in order:
+#    - Header with metadata (mission_id, task_id, task_name, timestamp, tech_stack)
+#    - API Endpoints (all REST endpoints with method, path, schemas, auth)
+#    - Pydantic Schemas (all request/response/base schemas with fields and validation)
+#    - Service Layer Design (service classes with responsibility and methods)
+#    - Repository Layer Design (repository classes with CRUD and custom queries)
+#    - Error Handling Strategy (exceptions, HTTP mapping, error response schema)
+#    - Authentication Strategy (JWT, token payload, validation method)
+#    - Middleware & Cross-Cutting Concerns (CORS, rate limiting, logging)
+#    - File Structure (expected directory layout for implementation)
+#    - Test Strategy (unit and integration test plans)
+#    - Self-Validation (proof of completeness)
+#
+# 3. Traceability:
+#    - Every output_contract deliverable must be covered by at least one endpoint
+#    - Every endpoint must have request and response schema defined
+#    - Every service must have a repository or external dependency
+#    - Every domain entity must have a repository
+#
+# 4. Validation is strict:
+#    - All checks must pass before writing
+#    - If a check fails, fix the design and re-validate
+#    - Self-validation section documents all checks performed
+#
+# 5. The markdown file is human-readable and detailed enough for backend-implementation
+#    to follow as a specification document.

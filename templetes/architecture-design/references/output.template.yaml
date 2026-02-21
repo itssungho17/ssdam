@@ -1,0 +1,222 @@
+# Agent Reference Schema — do NOT edit
+# This document describes the structure of the output architecture-design.TSK-NNN.md file
+# that the architecture-design skill produces.
+
+# OUTPUT FILE LOCATION
+# Path: .ssdam/{id}/output/design/architecture-design.TSK-NNN.md
+#
+# EXAMPLE:
+# .ssdam/media-marketplace-20260221-001/output/design/architecture-design.TSK-001.md
+#
+# NOTE: This is a MARKDOWN file, not YAML. This YAML describes its structure.
+
+---
+
+document_type: "architecture-design"
+
+# Metadata section — appears at top of markdown file
+metadata:
+  # From input task_spec.metadata.mission_id
+  # Format: "MIS-YYYYMMDD-NNN"
+  mission_id: ""
+
+  # From input task_spec.metadata.task_id
+  # Format: "TSK-NNN"
+  task_id: ""
+
+  # From input task_spec.metadata.task_name
+  task_name: ""
+
+  # The execution step ID that triggered this design
+  # From input task_spec.execution_plan.steps[exec_type="architecture-design"].exec_id
+  exec_step: ""
+
+  # ISO 8601 timestamp of when the design was created
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+# Overview section — high-level summary of the design
+overview:
+  # One-sentence statement of what this design achieves
+  # From input task_spec.purpose.statement
+  # Example: "Enable users to upload media files via REST API and retrieve them"
+  goal: ""
+
+  # Condensed summary of scope_included items (not word-for-word copy, but key concepts)
+  # Example: "Upload API, media database entities, S3 file storage, upload form UI"
+  scope_summary: ""
+
+  # Technology stack (from input)
+  tech_stack:
+    backend: ""
+    frontend: ""
+    database: ""
+    project_root: ""
+
+# Module boundaries section — each module's responsibility and interfaces
+module_boundaries:
+  # For each module identified in the design, list:
+  - module: ""
+    # Single sentence describing this module's one responsibility
+    # Example: "Handles user authentication and JWT token management"
+    responsibility: ""
+
+    # List of public APIs, events, or data this module exposes
+    # Examples for backend: ["POST /api/v1/auth/login", "GET /api/v1/auth/verify"]
+    # Examples for frontend: ["event: form-submitted", "prop: onUploadComplete"]
+    # Examples for data: ["event: media.uploaded", "table: media_files"]
+    interfaces: []
+
+    # List of other modules or external systems this module depends on
+    # Examples: ["Database", "Auth Service", "File Storage (S3)"]
+    depends_on: []
+
+# Component diagram section — Mermaid visualization of all modules and data flows
+component_diagram: |
+  ```mermaid
+  graph TD
+    ModuleA["Module A"]
+    ModuleB["Module B"]
+    DB[(Database)]
+    ModuleA --> ModuleB
+    ModuleB --> DB
+  ```
+
+# API contract overview section — REST endpoints created by this task
+api_contract_overview:
+  # For each API endpoint created in this task:
+  - endpoint: ""
+    # HTTP method: GET, POST, PUT, DELETE, PATCH
+    method: ""
+
+    # One-sentence description of what this endpoint does
+    # Example: "Accept a file upload, validate, store, and return media metadata"
+    purpose: ""
+
+    # Summary of request structure (no need to list every field, just key ones)
+    # Example: "multipart/form-data with file and metadata; Authorization header"
+    request_summary: ""
+
+    # Summary of response structure and status codes
+    # Example: "201 Created with { media_id: UUID, url: string }; 400 Bad Request; 401 Unauthorized"
+    response_summary: ""
+
+# Domain entities section — database entities created or modified by this task
+domain_entities:
+  # For each domain entity:
+  - entity: ""
+    # Expected database table name
+    # Example: "media_files"
+    table: ""
+
+    # List of important fields with their types and constraints
+    # Example: ["id (UUID, primary key)", "filename (string, 255)", "created_at (timestamp)"]
+    key_fields: []
+
+    # Relationships to other entities (natural language)
+    # Examples: ["belongs_to User", "has_many Comment", "many_to_many_via TagMediaFile"]
+    relationships: []
+
+# Design decisions section — significant architectural choices and their rationale
+design_decisions:
+  # For each major decision:
+  - decision: ""
+    # Why this choice was made (business value, technical constraint, etc.)
+    rationale: ""
+
+    # Alternative approaches considered and why they were rejected
+    # Examples: ["Option A (microservices) rejected due to operational complexity"]
+    alternatives_considered: []
+
+# Next skills section — recommendations for which skills to run next
+next_skills:
+  # Skill recommendation for data modeling
+  - skill: "data-modeling"
+    # Is this skill required? (Usually false — it's a recommendation)
+    required: false
+    # Condition that triggered this recommendation
+    # Example: "Task involves database entities (MediaFile, Comment, Upload)"
+    condition: "Task involves database entities"
+    # Full trigger command the user should run
+    trigger: "/data-modeling .ssdam/{id}/output/task-spec.TSK-NNN.yaml"
+
+  # Skill recommendation for backend design
+  - skill: "backend-design"
+    required: false
+    condition: "Task involves backend implementation"
+    trigger: "/backend-design .ssdam/{id}/output/task-spec.TSK-NNN.yaml"
+
+  # Skill recommendation for frontend design
+  - skill: "frontend-design"
+    required: false
+    condition: "Task involves frontend implementation"
+    trigger: "/frontend-design .ssdam/{id}/output/task-spec.TSK-NNN.yaml"
+
+# Self-validation section — proof that the design is complete and correct
+self_validation:
+  # Did all checks pass?
+  passed: true
+
+  # If any check failed, list what failed and what was fixed
+  # Empty if passed == true
+  failed_checks: []
+
+  # Detailed validation results
+  checks:
+    # Scope coverage: every scope_included item is addressed
+    scope_coverage_complete: true
+    scope_items_addressed: []
+
+    # Output contract traceability: every deliverable is traceable to a module or endpoint
+    output_contract_traceable: true
+    traceable_deliverables: []
+
+    # Mermaid diagram validity: syntax is correct and nodes are balanced
+    mermaid_diagram_valid: true
+    diagram_node_count: 0
+
+    # Module validation: each module has single responsibility, no circular deps
+    module_singleresponsibility: true
+    circular_dependencies: []
+
+    # API contract completeness: all endpoints are concrete and detailed
+    api_contract_complete: true
+    endpoint_count: 0
+
+    # Domain entity scope: only entities created/modified in this task are listed
+    domain_entity_scope_correct: true
+    entity_count: 0
+
+    # Next skills recommendation: at least one follow-on skill is recommended
+    next_skills_recommended: true
+    recommended_skill_count: 0
+
+---
+
+# NOTES FOR AGENT IMPLEMENTATION:
+#
+# 1. The markdown file is the actual output, not this YAML.
+#    This YAML describes the STRUCTURE of that markdown file.
+#
+# 2. Key sections in order:
+#    - Header with metadata (mission_id, task_id, task_name, timestamp, tech_stack)
+#    - Overview (goal, scope_summary, tech_stack)
+#    - Module Boundaries (for each module: name, responsibility, interfaces, dependencies)
+#    - Component Diagram (Mermaid graph TD)
+#    - API Contract Overview (for each endpoint: path, method, purpose, request, response)
+#    - Domain Entities (for each entity: name, table, fields, relationships)
+#    - Design Decisions (significant choices and rationale)
+#    - Next Steps (recommended follow-on skills)
+#    - Self-Validation (proof of completeness)
+#
+# 3. Traceability:
+#    - Every scope_included item must appear in at least one section
+#    - Every output_contract deliverable must be traceable to a module or endpoint
+#    - Every module must appear in the component diagram
+#
+# 4. Validation is strict:
+#    - All checks must pass before writing
+#    - If a check fails, fix the design and re-validate
+#    - Self-validation section documents all checks performed
+#
+# 5. The markdown file is human-readable and presentable to stakeholders.
+#    The YAML structure ensures consistency across all design documents.

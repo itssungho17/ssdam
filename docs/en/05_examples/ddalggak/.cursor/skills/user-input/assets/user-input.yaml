@@ -1,9 +1,0 @@
-metadata:
-  quest_owner: itssungho # 사용자명
-
-constraints:
-  backend_stack: FastAPI, TypeScript, Pydantic, SqlModel, PostgreSQL # 백엔드 스택은 선택 사항입니다. 백엔드 개발이 필요 없는 경우, 이 필드는 무시하셔도 됩니다.
-  frontend_stack: Svelte, TypeScript, TailwindCSS, Vite # 프론트엔드 스택은 선택 사항입니다. 프론트엔드 개발이 필요 없는 경우, 이 필드는 무시하셔도 됩니다.
-  project_root: ../../.. # 프로젝트 루트 경로
-  ssdam_root: ../../../.ssdam # SSDAM 루트 경로
-  team: itssungho # 사용자명 또는 팀명

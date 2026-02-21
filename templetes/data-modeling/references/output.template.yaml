@@ -1,0 +1,361 @@
+# Data-Modeling Skill Output Schema Template
+#
+# This document defines the structure of the data-modeling output file:
+# .ssdam/{id}/output/design/data-modeling.TSK-NNN.md
+#
+# The output is a MARKDOWN file with YAML frontmatter (shown below),
+# followed by markdown sections describing entities, relationships, and ERD.
+
+---
+
+# ============================================================================
+# YAML FRONTMATTER (Header Section)
+# ============================================================================
+
+document_type: "data-modeling"             # Always: "data-modeling"
+task_id: "TSK-001"                         # Copied from task-spec
+mission_id: "MIS-20260221-001"              # Copied from task-spec
+created_at: "2026-02-21T14:30:00Z"         # ISO 8601 timestamp of generation
+source_document: "architecture-design.TSK-001.md"  # Prerequisite that was read
+
+# ============================================================================
+# ENTITIES SECTION
+# ============================================================================
+#
+# Each entity becomes a database table. Fields are expanded from architecture
+# with concrete PostgreSQL types, nullability, defaults, and constraints.
+
+entities:
+  # First entity example: MediaFile
+  - entity_name: "MediaFile"                 # PascalCase (entity name)
+    table_name: "media_files"                # snake_case plural (table name)
+
+    fields:
+      # Primary key (always first)
+      - name: "id"
+        type: "UUID"                         # PostgreSQL UUID type
+        nullable: false
+        default: "gen_random_uuid()"         # Built-in function for UUID generation
+        unique: true
+
+      # Foreign key fields
+      - name: "owner_id"
+        type: "UUID"
+        nullable: false                      # Required: every file must have an owner
+        default: null
+        unique: false
+
+      # Business fields
+      - name: "filename"
+        type: "VARCHAR(255)"                 # String with max length
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "mime_type"
+        type: "VARCHAR(100)"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "size_bytes"
+        type: "INTEGER"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "storage_url"
+        type: "TEXT"                         # Unbounded string
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "is_public"
+        type: "BOOLEAN"
+        nullable: false
+        default: false                       # Default to private
+        unique: false
+
+      # Timestamps (always last two)
+      - name: "created_at"
+        type: "TIMESTAMPTZ"                  # Timezone-aware timestamp
+        nullable: false
+        default: "NOW()"                     # Database function
+        unique: false
+
+      - name: "updated_at"
+        type: "TIMESTAMPTZ"
+        nullable: false
+        default: "NOW()"
+        unique: false
+
+    primary_key: "id"                        # Which field is the PK
+
+    indexes:
+      # FK index (required for referential integrity performance)
+      - name: "idx_media_files_owner_id"
+        columns: ["owner_id"]
+        unique: false
+
+      # Search index (filename is often queried)
+      - name: "idx_media_files_filename"
+        columns: ["filename"]
+        unique: false
+
+      # Sort index (creation date is often sorted)
+      - name: "idx_media_files_created_at"
+        columns: ["created_at"]
+        unique: false
+
+  # Second entity example: Comment
+  - entity_name: "Comment"
+    table_name: "comments"
+
+    fields:
+      - name: "id"
+        type: "UUID"
+        nullable: false
+        default: "gen_random_uuid()"
+        unique: true
+
+      - name: "media_id"
+        type: "UUID"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "author_id"
+        type: "UUID"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "content"
+        type: "TEXT"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "created_at"
+        type: "TIMESTAMPTZ"
+        nullable: false
+        default: "NOW()"
+        unique: false
+
+      - name: "updated_at"
+        type: "TIMESTAMPTZ"
+        nullable: false
+        default: "NOW()"
+        unique: false
+
+    primary_key: "id"
+
+    indexes:
+      - name: "idx_comments_media_id"
+        columns: ["media_id"]
+        unique: false
+
+      - name: "idx_comments_author_id"
+        columns: ["author_id"]
+        unique: false
+
+      - name: "idx_comments_created_at"
+        columns: ["created_at"]
+        unique: false
+
+# ============================================================================
+# RELATIONSHIPS SECTION
+# ============================================================================
+#
+# Defines foreign key relationships and cardinality between entities.
+
+relationships:
+  # One-to-many: One User has many MediaFile
+  - from_entity: "MediaFile"
+    to_entity: "User"
+    relationship_type: "one_to_many"        # one_to_one | one_to_many | many_to_many
+    fk_field: "owner_id"                    # Column on from_entity that holds FK
+    junction_table: null                    # Only used for many_to_many
+
+  # One-to-many: One MediaFile has many Comment
+  - from_entity: "Comment"
+    to_entity: "MediaFile"
+    relationship_type: "one_to_many"
+    fk_field: "media_id"
+    junction_table: null
+
+  # One-to-many: One User authors many Comment
+  - from_entity: "Comment"
+    to_entity: "User"
+    relationship_type: "one_to_many"
+    fk_field: "author_id"
+    junction_table: null
+
+  # Many-to-many: Comment has_many Tag, Tag has_many Comment
+  - from_entity: "Comment"
+    to_entity: "Tag"
+    relationship_type: "many_to_many"
+    fk_field: null                          # No FK on main table (uses junction)
+    junction_table: "comment_tags"          # Junction table handles the relationship
+
+# ============================================================================
+# JUNCTION TABLES (for many-to-many relationships)
+# ============================================================================
+#
+# When a many_to_many relationship exists, define the junction table here.
+
+junction_tables:
+  - junction_table_name: "comment_tags"
+    left_entity: "Comment"
+    left_fk_column: "comment_id"
+    right_entity: "Tag"
+    right_fk_column: "tag_id"
+
+    # Junction table structure (for reference)
+    fields:
+      - name: "comment_id"
+        type: "UUID"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "tag_id"
+        type: "UUID"
+        nullable: false
+        default: null
+        unique: false
+
+      - name: "created_at"
+        type: "TIMESTAMPTZ"
+        nullable: false
+        default: "NOW()"
+        unique: false
+
+    # Compound primary key
+    primary_key: ["comment_id", "tag_id"]
+
+    indexes:
+      - name: "idx_comment_tags_comment_id"
+        columns: ["comment_id"]
+        unique: false
+
+      - name: "idx_comment_tags_tag_id"
+        columns: ["tag_id"]
+        unique: false
+
+# ============================================================================
+# ERD DIAGRAM (Mermaid)
+# ============================================================================
+#
+# Entity-Relationship Diagram in Mermaid syntax.
+# Shows all entities, their fields, and relationships visually.
+
+erd_diagram: |
+  ```mermaid
+  erDiagram
+    USER {
+      uuid id PK
+      varchar email UK
+      varchar password_hash
+      timestamptz created_at
+      timestamptz updated_at
+    }
+
+    MEDIA_FILE {
+      uuid id PK
+      uuid owner_id FK
+      varchar filename
+      varchar mime_type
+      integer size_bytes
+      text storage_url
+      boolean is_public
+      timestamptz created_at
+      timestamptz updated_at
+    }
+
+    COMMENT {
+      uuid id PK
+      uuid media_id FK
+      uuid author_id FK
+      text content
+      timestamptz created_at
+      timestamptz updated_at
+    }
+
+    TAG {
+      uuid id PK
+      varchar name UK
+      text description
+      timestamptz created_at
+      timestamptz updated_at
+    }
+
+    COMMENT_TAG {
+      uuid comment_id PK_FK
+      uuid tag_id PK_FK
+      timestamptz created_at
+    }
+
+    USER ||--o{ MEDIA_FILE : owns
+    USER ||--o{ COMMENT : authors
+    MEDIA_FILE ||--o{ COMMENT : has
+    COMMENT }o--o{ TAG : is_tagged_with
+  ```
+
+# ============================================================================
+# SELF-VALIDATION
+# ============================================================================
+#
+# Checklist of verification steps performed before writing the file.
+
+self_validation:
+  passed: true                              # Overall pass/fail
+
+  checks:
+    - check: "All entities from architecture-design are present"
+      result: "PASS"
+
+    - check: "Every entity has id (PK), created_at, updated_at"
+      result: "PASS"
+
+    - check: "Every FK field has corresponding index"
+      result: "PASS"
+
+    - check: "Many-to-many relationships have junction tables"
+      result: "PASS"
+
+    - check: "All field types are PostgreSQL native types"
+      result: "PASS"
+
+    - check: "Mermaid ERD syntax is valid"
+      result: "PASS"
+
+    - check: "No circular self-references (except hierarchical patterns)"
+      result: "PASS"
+
+    - check: "Table names are snake_case plural"
+      result: "PASS"
+
+    - check: "Entity names are PascalCase"
+      result: "PASS"
+
+  # If any check fails, list them here
+  failed_checks: []
+
+# ============================================================================
+# USAGE NOTES
+# ============================================================================
+#
+# This output file serves as input to the next skill in the chain:
+#
+# 1. schema-design reads this data-modeling output
+#    - Generates CREATE TABLE DDL statements
+#    - Generates CREATE INDEX statements
+#    - Generates constraints and triggers (if needed)
+#
+# 2. backend-design may also read this (for reference)
+#    - To understand entity structure and relationships
+#
+# The frontmatter + entity/relationship sections are the "contract"
+# that downstream skills depend on.
+

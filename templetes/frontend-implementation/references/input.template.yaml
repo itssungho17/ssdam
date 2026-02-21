@@ -1,0 +1,141 @@
+# Frontend-Implementation Skill Input Template
+# This template defines the structure of inputs consumed by the frontend-implementation skill.
+# All paths are relative to the SSDAM output directory (.ssdam/{id}/output/).
+
+---
+
+# PRIMARY INPUT: task-spec.TSK-NNN.yaml
+# Location: task-spec.TSK-NNN.yaml (at task root, not in .ssdam/)
+# Mandatory: YES
+task_spec:
+  metadata:
+    mission_id: "string"          # e.g., "MIS-001"
+    task_id: "string"             # e.g., "TSK-001"
+    task_name: "string"           # e.g., "Implement media library frontend"
+
+  purpose:
+    scope_included: "string[]"    # List of features to implement
+    scope_excluded: "string[]"    # Features explicitly not in scope
+
+  output_contract: "string[]"     # Acceptance criteria (must be met by implementation)
+
+  execution_plan:
+    tech_stack:
+      frontend: "string"          # e.g., "Svelte 5"
+      backend: "string"           # e.g., "Node.js/Express"
+      project_root: "string"      # Where to write code (e.g., "/path/to/my-project")
+      css_framework: "string"     # e.g., "TailwindCSS"
+      test_runner: "string"       # e.g., "Vitest"
+
+    steps:
+      - exec_type: "frontend-implementation"
+        acceptance_criteria: "string[]"  # What constitutes "done"?
+
+
+# REQUIRED SECONDARY INPUT: frontend-design.TSK-NNN.md
+# Location: .ssdam/{id}/output/design/frontend-design.TSK-NNN.md
+# Mandatory: YES
+# Provides the complete frontend specification to implement.
+
+frontend_design:
+  document_type: "frontend-design"
+  task_id: "string"
+
+  pages:
+    - page_name: "string"
+      route: "string"
+      purpose: "string"
+      layout: "string"
+      components: "string[]"
+
+  components:
+    - component_name: "string"
+      file: "string"
+      category: "string"         # page | layout | feature | atomic
+      props:
+        - name: "string"
+          type: "string"
+          required: "boolean"
+      events: "object[]"
+      stores_used: "string[]"
+
+  stores:
+    - store_name: "string"
+      file: "string"
+      state_interface: "string"
+      initial_state: "object"
+      actions: "object[]"
+
+  api_integration:
+    - api_client_file: "string"
+      endpoints:
+        - endpoint_path: "string"
+          http_method: "string"
+          function_name: "string"
+          trigger: "object"
+          request: "object"
+          response: "object"
+          auth_required: "boolean"
+
+  file_structure:
+    - path: "string"
+      description: "string"
+
+  test_strategy:
+    test_runner: "string"
+    component_tests:
+      location: "string"
+      coverage: "number"
+
+
+# OPTIONAL SECONDARY INPUT: backend-design.TSK-NNN.md
+# Location: .ssdam/{id}/output/design/backend-design.TSK-NNN.md
+# Mandatory: NO
+# If present: provides precise API endpoint and schema details for implementation.
+
+backend_design:
+  present: "boolean"              # true if backend-design.TSK-NNN.md exists
+
+  api_endpoints:
+    - path: "string"              # e.g., "/api/media/files"
+      method: "string"            # GET, POST, PUT, DELETE, PATCH
+      auth_required: "boolean"
+      request_schema: "string"    # TypeScript interface name for request body
+      response_schema: "string"   # TypeScript interface name for response
+      description: "string"
+      error_responses:
+        - code: "number"
+          description: "string"
+
+  schemas:
+    - name: "string"              # e.g., "MediaFile"
+      description: "string"
+      fields:
+        - name: "string"
+          type: "string"          # TypeScript type (string, number, etc.)
+          required: "boolean"
+          description: "string"
+
+
+# CONTEXT INPUTS (extracted during step load, not separate files)
+context:
+  framework:
+    frontend: "string"            # From task-spec.execution_plan.tech_stack.frontend
+    supports_components: "boolean"  # true for Svelte, React, Vue
+    supports_reactive_stores: "boolean"  # true for Svelte, Vue
+    build_tool: "string"          # Vite, Webpack, etc.
+
+  project_setup:
+    typescript_enabled: "boolean"
+    tailwind_configured: "boolean"
+    test_framework: "string"      # Vitest, Jest, etc.
+    svelte_kit_enabled: "boolean"
+
+  auth_context:
+    auth_method: "string"         # JWT, OAuth, Session, etc.
+    auth_store_name: "string"     # Where is auth state stored?
+    token_field: "string"         # e.g., "authStore.token"
+
+  api_context:
+    base_url_env: "string"        # e.g., "VITE_API_BASE"
+    default_base_url: "string"    # e.g., "http://localhost:3000"

@@ -1,0 +1,106 @@
+# Frontend-Design Skill Input Template
+# This template defines the structure of inputs consumed by the frontend-design skill.
+# All paths are relative to the SSDAM output directory (.ssdam/{id}/output/).
+
+---
+
+# PRIMARY INPUT: task-spec.TSK-NNN.yaml
+# Location: task-spec.TSK-NNN.yaml (at task root, not in .ssdam/)
+# Mandatory: YES
+task_spec:
+  metadata:
+    mission_id: "string"          # e.g., "MIS-001"
+    task_id: "string"             # e.g., "TSK-001"
+    task_name: "string"           # e.g., "Build media library frontend"
+
+  purpose:
+    scope_included: "string[]"    # List of features with UI: ["MediaGallery", "UploadFlow", "Marketplace"]
+    scope_excluded: "string[]"    # Features explicitly not in scope
+
+  output_contract: "string[]"     # Acceptance criteria for the design output
+
+  execution_plan:
+    tech_stack:
+      frontend: "string"          # e.g., "Svelte 5" (determines component framework)
+      project_root: "string"      # e.g., "/path/to/my-project" (where to write code)
+      css_framework: "string"     # e.g., "TailwindCSS" (optional; default: TailwindCSS)
+
+    steps:
+      - exec_type: "frontend-design"
+        requires: ["architecture-design", "optional: backend-design"]
+
+
+# REQUIRED SECONDARY INPUT: architecture-design.TSK-NNN.md
+# Location: .ssdam/{id}/output/design/architecture-design.TSK-NNN.md
+# Mandatory: YES
+# Provides system-level design context and high-level API structure.
+
+architecture_design:
+  api_contract_overview:
+    description: "Conceptual overview of API endpoints"
+    endpoints:
+      - path: "string"            # e.g., "/api/media/files"
+        method: "string"          # GET, POST, PUT, DELETE, PATCH
+        description: "string"
+        auth_required: "boolean"
+
+  domain_entities:
+    description: "Core data model"
+    entities:
+      - name: "string"            # e.g., "MediaFile"
+        fields:
+          - field_name: "string"
+            type: "string"
+
+  module_boundaries:
+    description: "System partitioning and responsibilities"
+    modules: "string[]"
+
+
+# OPTIONAL SECONDARY INPUT: backend-design.TSK-NNN.md
+# Location: .ssdam/{id}/output/design/backend-design.TSK-NNN.md
+# Mandatory: NO
+# If present: provides precise API endpoint details and schema definitions.
+# If absent: use api_contract_overview from architecture-design as fallback.
+
+backend_design:
+  present: "boolean"              # true if backend-design.TSK-NNN.md exists
+
+  api_endpoints:
+    description: "Precise API specification"
+    endpoints:
+      - path: "string"            # e.g., "/api/media/files"
+        method: "string"          # GET, POST, PUT, DELETE, PATCH
+        auth_required: "boolean"
+        request_schema: "string"  # e.g., "UploadFileRequest"
+        response_schema: "string" # e.g., "MediaFile"
+        error_responses:
+          - code: "number"        # e.g., 400, 404, 500
+            description: "string"
+
+  schemas:
+    description: "TypeScript interface definitions for API types"
+    types:
+      - name: "string"            # e.g., "MediaFile"
+        fields:
+          - name: "string"
+            type: "string"        # TypeScript type: string, number, boolean, etc.
+            required: "boolean"
+            description: "string"
+
+
+# CONTEXT INPUTS (extracted at skill start, not separate files)
+context:
+  user_roles:
+    description: "From architecture-design or task-spec"
+    roles: "string[]"             # e.g., ["admin", "user", "guest"]
+
+  auth_method:
+    description: "Authentication mechanism (from backend-design or architecture-design)"
+    type: "string"                # e.g., "JWT", "OAuth2", "Session"
+
+  framework:
+    frontend: "string"            # Determined from task-spec.execution_plan.tech_stack.frontend
+    components: "boolean"         # Supports component-based arch? (true for Svelte, React, Vue)
+    reactive: "boolean"           # Supports reactive data binding? (true for Svelte, Vue)
+    stores: "boolean"             # Has built-in store system? (true for Svelte; others need external)

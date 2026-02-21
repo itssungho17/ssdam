@@ -1,0 +1,155 @@
+# Data-Modeling Skill Input Schema Template
+#
+# This document defines the structure of inputs that the data-modeling skill consumes.
+# It is a REFERENCE SCHEMA — not an actual execution artifact.
+#
+# Data-modeling consumes TWO input files:
+# 1. task-spec.TSK-NNN.yaml (user provides the path)
+# 2. architecture-design.TSK-NNN.md (read from .ssdam/{id}/output/design/)
+
+---
+
+# ============================================================================
+# INPUT SOURCE 1: task-spec.TSK-NNN.yaml
+# ============================================================================
+#
+# The task-spec is the primary trigger file. The data-modeling skill reads
+# specific sections from it.
+
+task_spec:
+  metadata:
+    # Required fields from task-spec
+    mission_id: "MIS-20260221-001"        # Copied to output document
+    task_id: "TSK-001"                     # Used to derive output filename
+    task_name: "Upload Media Feature"      # Used as document title
+    task_owner: "alice@example.com"        # For metadata only (optional)
+    requirement_ids:                       # For traceability (optional)
+      - "REQ-001"
+      - "REQ-002"
+
+  purpose:
+    # The scope_included list defines which entities are in scope
+    statement: "Enable users to upload media files to their accounts"
+    scope_included:
+      - "MediaFile entity in database"
+      - "Upload timestamp tracking"
+      - "File metadata storage (size, type)"
+    scope_excluded:
+      - "File virus scanning"
+      - "Video transcoding"
+
+  execution_plan:
+    # Tech stack confirms database type
+    tech_stack:
+      backend: "FastAPI, Pydantic, SqlModel"
+      frontend: "Svelte, TailwindCSS"
+      database: "PostgreSQL"               # Required: defines DBMS type
+      project_root: "/home/user/project"   # Path to project repo
+
+    # Steps array should include data-modeling step
+    steps:
+      - exec_id: "EXEC-02"
+        exec_type: "data-modeling"          # This skill
+        description: "Define entity fields, types, relationships, and indexes"
+        acceptance_criteria: |
+          - data-modeling.TSK-001.md created with:
+            - Entity definitions: MediaFile, UploadTask
+            - Fields: id, owner_id, filename, mime_type, size_bytes, storage_url, created_at, updated_at
+            - Relationships: MediaFile.owner_id → User.id (one_to_many)
+            - Mermaid ERD with all entities and relationships
+            - Indexes on: owner_id (FK), filename (search), created_at (sort)
+
+---
+
+# ============================================================================
+# INPUT SOURCE 2: architecture-design.TSK-NNN.md
+# ============================================================================
+#
+# The architecture-design output is the REQUIRED PREREQUISITE for data-modeling.
+# The skill reads these sections:
+
+architecture_design:
+  # This is extracted from the markdown file's domain_entities section
+  domain_entities:
+    # Each entity defined in architecture becomes a table in data-modeling
+    - entity: "MediaFile"
+      table: "media_files"
+      key_fields:
+        - "id (UUID, primary key)"
+        - "owner_id (FK to User)"
+        - "filename (string, 255 chars)"
+        - "mime_type (string, 100 chars)"
+        - "size_bytes (integer)"
+        - "storage_url (string, S3 path)"
+        - "created_at (timestamp)"
+        - "updated_at (timestamp)"
+      relationships:
+        - "belongs_to User (via owner_id)"
+        - "has_many Comment"
+
+    - entity: "UploadTask"
+      table: "upload_tasks"
+      key_fields:
+        - "id (UUID, primary key)"
+        - "user_id (FK to User)"
+        - "file_count (integer)"
+        - "status (enum: pending, processing, completed, failed)"
+        - "error_message (text, nullable)"
+        - "created_at (timestamp)"
+        - "updated_at (timestamp)"
+      relationships:
+        - "belongs_to User (via user_id)"
+        - "has_many MediaFile"
+
+    - entity: "Comment"
+      table: "comments"
+      key_fields:
+        - "id (UUID, primary key)"
+        - "media_id (FK to MediaFile)"
+        - "author_id (FK to User)"
+        - "content (text)"
+        - "created_at (timestamp)"
+        - "updated_at (timestamp)"
+      relationships:
+        - "belongs_to MediaFile (via media_id)"
+        - "belongs_to User (via author_id)"
+        - "has_many Tag (many-to-many)"
+
+  # Derived from architecture analysis
+  tech_stack:
+    backend: "FastAPI, Pydantic, SqlModel"
+    frontend: "Svelte, TailwindCSS"
+    database: "PostgreSQL"                  # Confirms DB type for type selection
+
+---
+
+# ============================================================================
+# USAGE NOTES FOR AGENT
+# ============================================================================
+#
+# When data-modeling skill is triggered:
+#
+# 1. User provides a task-spec path (e.g., ".ssdam/media-marketplace/output/task-spec.TSK-001.yaml")
+#
+# 2. Skill reads task-spec and extracts:
+#    - metadata (mission_id, task_id, task_name)
+#    - tech_stack.database (confirms PostgreSQL or other DBMS)
+#    - execution_plan.steps[] to find "data-modeling" step (for acceptance criteria)
+#
+# 3. Skill derives workspace dir from task-spec path:
+#    - Input: ".ssdam/media-marketplace/output/task-spec.TSK-001.yaml"
+#    - Workspace: ".ssdam/media-marketplace/"
+#    - Design dir: ".ssdam/media-marketplace/output/design/"
+#
+# 4. Skill reads prerequisite:
+#    - ".ssdam/{id}/output/design/architecture-design.TSK-001.md"
+#    - MUST exist; if not found, stop and tell user to run /architecture-design first
+#
+# 5. Skill extracts domain_entities from architecture-design markdown
+#    - For each entity: expand fields → assign PostgreSQL types
+#    - For each relationship: define as one_to_many, one_to_one, or many_to_many
+#
+# 6. Skill writes output:
+#    - ".ssdam/{id}/output/design/data-modeling.TSK-001.md"
+#    - With entity definitions, field specs, relationships, Mermaid ERD, indexes
+

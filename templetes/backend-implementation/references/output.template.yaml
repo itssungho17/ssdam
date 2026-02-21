@@ -1,0 +1,207 @@
+# Agent Reference Schema — do NOT edit
+# This document describes the structure and expectations of the output from backend-implementation.
+
+# OUTPUT
+# The backend-implementation skill does NOT produce a design document.
+# Instead, it produces working Python code written directly to project_root/.
+#
+# This YAML template documents what the implementation MUST deliver.
+
+---
+
+document_type: "backend-implementation-deliverables"
+task_id: "TSK-NNN"
+
+# Overview: what code files are created
+deliverables:
+  # Pydantic request/response schemas
+  models:
+    - file: "src/models/schemas.py"
+      description: "All Pydantic request/response schemas"
+      classes:
+        - "BaseModel subclasses (e.g., MediaFileCreate, MediaFileResponse)"
+        - "Config with from_attributes = True"
+
+    - file: "src/models/exceptions.py"
+      description: "Custom exception classes for error handling"
+      classes:
+        - "AppException (base)"
+        - "[ResourceNotFoundError, UnauthorizedError, etc.]"
+
+    - file: "src/models/db.py"
+      description: "SQLModel ORM models (database tables)"
+      classes:
+        - "SQLModel table classes (one per domain entity)"
+
+  # Repository layer (data access abstraction)
+  repositories:
+    - file: "src/repositories/{entity_name}_repository.py"
+      description: "Data access layer for {entity_name}"
+      class: "{EntityName}Repository"
+      methods:
+        - "async create(session, data)"
+        - "async get_by_id(session, id)"
+        - "async get_all(session, skip, limit)"
+        - "async update(session, id, data)"
+        - "async delete(session, id)"
+        - "[custom query methods as needed]"
+
+  # Service layer (business logic)
+  services:
+    - file: "src/services/{entity_name}_service.py"
+      description: "Business logic for {entity_name}"
+      class: "{EntityName}Service"
+      methods:
+        - "Dependency injection: __init__(self, repository)"
+        - "async [create_entity, get_entity, delete_entity]"
+        - "[all methods call repository, never direct DB access]"
+
+  # Authentication middleware
+  middleware:
+    - file: "src/middleware/auth.py"
+      description: "JWT authentication and authorization"
+      classes:
+        - "CurrentUser (authenticated user context)"
+      functions:
+        - "async get_current_user(credentials) -> CurrentUser"
+        - "create_access_token(user_id, email) -> str"
+
+  # FastAPI routers (API endpoints)
+  routes:
+    - file: "src/api/v1/{resource_name}.py"
+      description: "FastAPI router for {resource_name} endpoints"
+      router_prefix: "/api/v1/{resource}"
+      endpoints:
+        - "method: HTTP method (GET, POST, DELETE, etc.)"
+        - "path: endpoint path (e.g., /, /{id})"
+        - "auth: Depends(get_current_user) if auth_required"
+        - "response_model: Pydantic schema"
+        - "status_code: HTTP status code"
+
+  # Database session and configuration
+  infrastructure:
+    - file: "src/db.py"
+      description: "Database engine, session factory, initialization"
+      functions:
+        - "get_session() -> AsyncGenerator[AsyncSession, None]"
+        - "init_db() async — create all tables"
+        - "close_db() async — cleanup"
+
+    - file: "src/main.py"
+      description: "FastAPI application initialization and configuration"
+      content:
+        - "FastAPI app instance"
+        - "CORS middleware"
+        - "Exception handlers (AppException -> ErrorResponse)"
+        - "Router registration"
+        - "Health check endpoint (/health)"
+        - "Startup/shutdown events"
+
+  # Database migrations (if schema-design exists)
+  migrations:
+    - file: "migrations/alembic.ini"
+      description: "Alembic configuration"
+
+    - file: "migrations/env.py"
+      description: "Alembic environment setup"
+
+    - file: "migrations/versions/001_initial_schema.py"
+      description: "Database schema migration from schema-design"
+      content:
+        - "upgrade() — CREATE TABLE statements"
+        - "downgrade() — DROP TABLE statements"
+
+  # Unit tests (service layer)
+  tests:
+    unit:
+      - file: "tests/fixtures/conftest.py"
+        description: "Pytest fixtures and configuration"
+        content:
+          - "test_db() — in-memory test database"
+          - "test_session() — AsyncSession for tests"
+          - "[service dependencies and mocks]"
+
+      - file: "tests/unit/services/test_{service}_service.py"
+        description: "Unit tests for service methods"
+        type: "unit"
+        covers:
+          - "Happy path (success cases)"
+          - "Error cases (exceptions raised)"
+          - "Business logic validation"
+
+    integration:
+      - file: "tests/integration/api/test_{resource}.py"
+        description: "Integration tests for API endpoints"
+        type: "integration"
+        covers:
+          - "Endpoint HTTP status codes"
+          - "Request/response schema validation"
+          - "Authentication flow"
+          - "Error handling"
+
+  # Configuration files
+  configuration:
+    - file: ".env.example"
+      description: "Template for environment variables"
+      content:
+        - "DATABASE_URL=postgresql+asyncpg://..."
+        - "SECRET_KEY=..."
+        - "ALLOWED_ORIGINS=..."
+        - "[other config]"
+
+    - file: "requirements.txt"
+      description: "Python package dependencies"
+      content:
+        - "fastapi"
+        - "sqlalchemy"
+        - "sqlmodel"
+        - "pydantic"
+        - "python-jose"
+        - "pytest"
+        - "[other dependencies]"
+
+    - file: "pytest.ini"
+      description: "Pytest configuration"
+
+# Verification requirements
+verification:
+  # Code quality
+  code_quality:
+    - "All files use correct naming: snake_case for files, PascalCase for classes"
+    - "All functions and methods are documented with docstrings"
+    - "No business logic in routers (only in services)"
+    - "No direct DB access in services (only via repositories)"
+    - "All repository methods are async"
+    - "No hardcoded secrets (use .env)"
+
+  # Functional correctness
+  functional:
+    - "All endpoints from backend-design.api_endpoints are implemented"
+    - "All schemas from backend-design.schemas are defined"
+    - "All services from backend-design.services are implemented"
+    - "All repositories from backend-design.repositories are implemented"
+    - "All auth_required endpoints use Depends(get_current_user)"
+    - "All error scenarios raise custom exceptions"
+    - "Error responses match error_response_schema"
+
+  # Testing
+  testing:
+    - "pytest runs without errors: pytest tests/"
+    - "Unit tests pass (>80% coverage target)"
+    - "Integration tests pass (all endpoints covered)"
+    - "No test failures"
+
+  # Acceptance criteria
+  acceptance_criteria:
+    - "All items from task-spec.execution_plan.steps[exec_type='backend-implementation'].acceptance_criteria are met"
+
+---
+
+# SUMMARY
+# The backend-implementation skill is autonomous code execution.
+# It produces working, tested Python code ready for deployment.
+# The code must be:
+#   - Correct (all tests pass)
+#   - Complete (all endpoints, schemas, services implemented)
+#   - Clean (follows conventions, documented)
+#   - Compliant (follows backend-design specification exactly)
