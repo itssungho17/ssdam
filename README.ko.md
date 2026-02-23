@@ -6,7 +6,11 @@
 
 > SSDAM은 *"무엇을 했는가"* 가 아닌, *"무엇이 검증되었는가"* 를 기준으로 동작합니다.
 
-English documentation: [README.md](./README.md)
+---
+
+**빠른 시작: [ko/01_overview/quickstart.md](./ko/01_overview/quickstart.md)**
+
+**English documentation: [README.md](./README.md)**
 
 ---
 
@@ -149,37 +153,17 @@ ssdam/
 
 ## 시작하기
 
-### 1. Mission 정의
+Cursor 설정, `package.json` 작성법, 스킬 상태, 중간 수정 루프까지 포함한 전체 가이드는 **[Quickstart 가이드](./ko/01_overview/quickstart.md)**를 참고하세요.
 
-AI 에이전트를 `new-mission` 스킬로 호출합니다:
+### 흐름 요약
 
-```
-/new-mission <원하는 아이디어 또는 기능 목록>
-```
-
-에이전트가 프로젝트를 스캔하고 질문을 통해 정보를 수집한 뒤, `.ssdam/{workspace-id}/output/mission-spec.yaml`을 생성합니다.
-
-### 2. Task 스펙 생성
-
-미션의 각 Task에 대해:
-
-```
-/new-task .ssdam/{workspace-id}/output/mission-spec.yaml <TSK-NNN>
-```
-
-에이전트가 미션 스펙을 읽고 검증한 뒤, 완전히 명세된 `task-spec.TSK-001.yaml`을 생성합니다.
-
-### 3. Task 실행
-
-task-spec의 `execution_plan.steps`를 순서대로 실행합니다:
-
-```
-/architecture-design .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/data-modeling       .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/schema-design       .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/backend-design      .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/backend-implementation .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-```
+| 단계 | 명령 |
+|------|------|
+| 1. 스킬 설치 | `templetes/` → `.cursor/skills/` 복사 |
+| 2. 프로젝트 정보 입력 | `.cursor/skills/new-mission/assets/package.json` 수정 |
+| 3. Mission 생성 | `/new-mission <아이디어 또는 기능 목록>` |
+| 4. Task 스펙 생성 | `/new-task @mission-spec.yaml TSK-001` |
+| 5. Execution 스킬 실행 | `/{exec_type} @task-spec.TSK-001.yaml EXEC-01` → ... |
 
 ---
 
@@ -202,7 +186,7 @@ task-spec의 `execution_plan.steps`를 순서대로 실행합니다:
 
 | 섹션 | 내용 |
 |------|------|
-| `ko/01_overview/` | SSDAM 개요 |
+| `ko/01_overview/` | SSDAM 개요 · **[Quickstart](./ko/01_overview/quickstart.md)** |
 | `ko/02_core_concepts/` | 원칙, 용어집, ID 컨벤션 |
 | `ko/03_architecture/` | 흐름 아키텍처, 미션/태스크 모델, 의존성 모델, 복구 전략 |
 | `ko/04_methodology/` | Mission 및 Task 설계 가이드 |

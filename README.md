@@ -6,7 +6,11 @@ A Human–AI collaborative development and operation mechanism that defines **Ta
 
 > SSDAM operates on *"What has been validated"* — not *"What has been done."*
 
-한국어 문서: [README.ko.md](./README.ko.md)
+---
+
+**Quickstart: [en/01_overview/quickstart.md](./en/01_overview/quickstart.md)**
+
+**한국어 문서: [README.ko.md](./README.ko.md)**
 
 ---
 
@@ -149,37 +153,17 @@ Each skill folder contains:
 
 ## Getting Started
 
-### 1. Define a Mission
+For a full step-by-step walkthrough — including Cursor setup, `package.json` configuration, skill status, and the correction loop — see the **[Quickstart Guide](./en/01_overview/quickstart.md)**.
 
-Point your AI agent at the `new-mission` skill and run:
+### Quick overview
 
-```
-/new-mission <Natural Language Description of the Mission Idea or Feature List>
-```
-
-The agent scans your project, asks clarifying questions, and writes `mission-spec.yaml` to `.ssdam/{workspace-id}/output/`.
-
-### 2. Generate Task Specs
-
-For each task in the mission:
-
-```
-/new-task .ssdam/{workspace-id}/output/mission-spec.yaml <TSK-NNN>
-```
-
-The agent reads the mission spec, validates it, and writes a fully specified `task-spec.TSK-001.yaml`.
-
-### 3. Execute Tasks
-
-Follow the `execution_plan.steps` in the task spec. Run each skill in order:
-
-```
-/architecture-design .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/data-modeling       .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/schema-design       .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/backend-design      .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-/backend-implementation .ssdam/{workspace-id}/output/task-spec.TSK-001.yaml
-```
+| Step | Command |
+|------|---------|
+| 1. Install skills | Copy `templetes/` → `.cursor/skills/` |
+| 2. Configure | Edit `.cursor/skills/new-mission/assets/package.json` |
+| 3. Create mission | `/new-mission <idea or feature list>` |
+| 4. Create task spec | `/new-task @mission-spec.yaml TSK-001` |
+| 5. Run execution skills | `/{exec_type} @task-spec.TSK-001.yaml EXEC-01` → ... |
 
 ---
 
@@ -202,7 +186,7 @@ Full documentation is available in the `en/` and `ko/` directories.
 
 | Section | Contents |
 |---------|----------|
-| `en/01_overview/` | SSDAM overview |
+| `en/01_overview/` | SSDAM overview · **[Quickstart](./en/01_overview/quickstart.md)** |
 | `en/02_core_concepts/` | Principles, glossary, ID conventions |
 | `en/03_architecture/` | Flow architecture, mission/task model, dependency model, recovery strategy |
 | `en/04_methodology/` | Design guides for Mission and Task |

@@ -6,4 +6,7 @@ ddalggak is a web-based example project for SSDAM. It demonstrates how to use SS
 
 ---
 
-## TBD
+## TBD : This project is under development.
+
+- [https://github.com/itssungho17/ddalggak](https://github.com/itssungho17/ddalggak)
+
