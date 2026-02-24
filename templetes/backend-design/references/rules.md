@@ -12,8 +12,8 @@ This document defines the design rules that must be enforced when producing a ba
 
 - If output_contract mentions "REST API with endpoints: POST /media/upload, GET /media/{id}", then:
   - Step 2 (API Endpoints) must define both endpoints
-  - Step 3 (Schemas) must define request/response schemas for both
-  - Step 4 (Services) must include the service method(s) that handle these endpoints
+  - Step 4 (API Layer: Request/Response DTOs) must define request/response schemas for both
+  - Step 5 (Service Layer: Application Service) must include the service method(s) that handle these endpoints
 
 - Verification: After Step 7b, the design document must include a traceability matrix showing which endpoint(s) satisfy each output_contract entry.
 
@@ -35,50 +35,79 @@ This document defines the design rules that must be enforced when producing a ba
 
 ---
 
-### Rule 3: Service Layer Isolation (Mandatory)
+### Rule 3: Domain Layer Isolation (Mandatory)
 
-**Service layer must NOT directly access the database. All DB access goes through repositories.**
+**The domain layer (`{domain}/domain/`) must have zero dependencies on any framework.**
 
-- Service method implementation detail:
-  ```python
-  # CORRECT:
-  async def create_media_file(self, data: MediaFileCreate):
-    return await self.media_repo.create(self.session, data)
+No imports of FastAPI, SQLModel, SQLAlchemy, Pydantic, or any HTTP/ORM library are allowed inside `domain/`.
+Domain entities and value objects are pure Python classes.
 
-  # WRONG:
-  async def create_media_file(self, data: MediaFileCreate):
-    db.session.add(MediaFile(...))  # Direct DB access
-    db.session.commit()
-  ```
+```python
+# CORRECT — pure Python domain entity
+@dataclass
+class MediaFile:
+    id: UUID
+    owner_id: UUID
+    filename: FileName     # VO
+    mime_type: MimeType    # VO
+    size_bytes: FileSize   # VO
 
-- Rationale: Separating business logic (service) from data access (repository) enables testing, mocking, and future database changes.
+# WRONG — ORM decorator leaking into domain
+class MediaFile(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+```
 
-- Verification: In Step 5 verification, check that every service method calls only repository methods or external services, never direct DB queries.
+- Rationale: Keeping the domain pure means it can be tested without any infrastructure, swapped without changing business rules, and read without understanding any framework.
 
-- Anti-pattern: Service method contains SQLAlchemy queries, ORM session manipulation, or database locks.
+- Verification: In Step 3 review, confirm no `import fastapi`, `import sqlmodel`, or `import sqlalchemy` appears in any `domain/` file.
+
+- Anti-pattern: Mixing ORM models with domain entities in the same class.
 
 ---
 
-### Rule 4: Repository Methods Must Be Async (Mandatory)
+### Rule 3b: Service Layer Isolation (Mandatory)
 
-**Every repository method must be defined as `async def` (not `def`).**
+**The application service layer must NOT directly access the database. All DB access goes through stores.**
+
+```python
+# CORRECT
+class MediaService:
+    async def create_file(self, session, owner_id, req):
+        entity = self.facade.create_file(...)   # domain logic
+        await self.store.save(session, entity)  # DB via store
+
+# WRONG
+class MediaService:
+    async def create_file(self, session, owner_id, req):
+        orm = MediaFileORM(...)                 # ORM directly in service
+        session.add(orm)
+        await session.commit()
+```
+
+- Verification: Every application service method calls only facade methods, store methods, proxy methods, and mappers. Never direct ORM operations.
+
+---
+
+### Rule 4: Store Methods Must Be Async (Mandatory)
+
+**Every store (`service/store/`) method must be defined as `async def` (not `def`).**
 
 - This enables concurrent request handling in FastAPI.
 
 - Example:
   ```python
   # CORRECT:
-  async def get_by_id(self, session: AsyncSession, file_id: UUID) -> Optional[MediaFile]:
+  async def find_by_id(self, session: AsyncSession, file_id: UUID) -> Optional[MediaFile]:
     ...
 
   # WRONG:
-  def get_by_id(self, session: Session, file_id: UUID) -> MediaFile:
+  def find_by_id(self, session: Session, file_id: UUID) -> MediaFile:
     ...
   ```
 
-- Verification: In Step 5, check that all repository method signatures include `async def`.
+- Verification: In Step 5a, check that all store method signatures include `async def`.
 
-- Anti-pattern: Synchronous repository methods (blocking calls in async context).
+- Anti-pattern: Synchronous store methods (blocking calls in async context).
 
 ---
 
@@ -134,27 +163,47 @@ This document defines the design rules that must be enforced when producing a ba
 
 ### Rule 7: Naming Conventions (Mandatory)
 
-**Follow Python and FastAPI naming standards.**
+**Follow Python, FastAPI, and DDD naming standards.**
+
+#### Directory Naming (domain-first, snake_case)
+- Domain directories: `auth/`, `media/`, `folder/` (one directory per domain)
+- Sub-layers: `domain/`, `api/`, `service/` (always lowercase, fixed names)
 
 #### File Naming (snake_case)
-- Router files: `src/api/v1/media_files.py` (not `MediaFiles.py`)
-- Service files: `src/services/media_file_service.py` (not `MediaFileService.py`)
-- Repository files: `src/repositories/media_file_repository.py` (not `MediaFileRepository.py`)
+- Controller: `{domain}/api/controller/{domain}_router.py`
+- Request DTO: `{domain}/api/request/{entity}_{action}_request.py`
+- Response DTO: `{domain}/api/response/{entity}_response.py`
+- API Mapper: `{domain}/api/mapper/{domain}_mapper.py`
+- Entity: `{domain}/domain/entity/{entity}.py`
+- Value Object: `{domain}/domain/vo/{vo_name}.py`
+- Facade: `{domain}/domain/facade/{domain}_facade.py`
+- Store: `{domain}/service/store/{entity}_store.py`
+- Proxy: `{domain}/service/proxy/{service}_proxy.py`
+- Service Mapper: `{domain}/service/mapper/{domain}_mapper.py`
+- App Service: `{domain}/service/{domain}_service.py`
 
 #### Class Naming (PascalCase)
-- Service classes: `MediaFileService` (not `media_file_service`)
-- Repository classes: `MediaFileRepository` (not `media_file_repository`)
-- Pydantic schemas: `MediaFileCreate`, `MediaFileResponse` (not `media_file_create`)
-- Exception classes: `ResourceNotFoundError` (not `resource_not_found_error`)
+- Domain entities: `User`, `MediaFile`, `Folder`
+- Value Objects: `EmailAddress`, `FileName`, `FileSize`, `MimeType`
+- Domain Facade: `AuthFacade`, `MediaFacade`
+- Application Service: `AuthService`, `MediaService`
+- Store: `UserStore`, `MediaFileStore`
+- Proxy: `StorageProxy`, `EmailProxy`, `TokenProxy`
+- Request DTOs: `RegisterRequest`, `MediaFileCreateRequest`
+- Response DTOs: `UserResponse`, `MediaFileResponse`, `AuthResponse`
+- Domain Exceptions: `MediaFileNotFoundError`, `InvalidCredentialsError`
 
 #### Method/Function Naming (snake_case)
-- Service methods: `create_media_file()`, `get_by_owner()`, `delete_media_file()`
-- Repository methods: `create()`, `get_by_id()`, `filter_by_owner()`
-- Router endpoints: `@router.post("/upload")` def `upload_media()`
+- Application service: `create_file()`, `get_file()`, `delete_file()`
+- Store methods: `save()`, `find_by_id()`, `find_by_owner()`, `delete()`
+- Proxy methods: `upload()`, `delete()`, `send_email()`
+- Facade methods: `create_file()`, `validate_ownership()`, `mark_hidden()`
+- Mapper methods: `to_domain()`, `to_response()`, `to_orm()`
 
 #### Field Naming (snake_case)
-- Pydantic fields: `file_name`, `mime_type`, `size_bytes` (not `fileName`, `mimeType`)
-- Database columns: `file_name`, `mime_type`, `size_bytes` (from schema-design)
+- Entity fields: `owner_id`, `created_at`, `mime_type`
+- Request/Response DTO fields: `file_name`, `mime_type`, `size_bytes` (not `fileName`)
+- Database columns: match entity field names exactly (from schema-design)
 
 ---
 
@@ -190,43 +239,44 @@ async def upload(file: UploadFile, current_user = Depends(get_current_user)):
         raise HTTPException(status_code=422, detail=str(e))
 ```
 
-#### Anti-Pattern 2: Direct DB Queries in Repository
+#### Anti-Pattern 2: Direct DB Queries in Store (Session Not Injected)
 
 **WRONG:**
 ```python
-class MediaFileRepository:
+class MediaFileStore:
     async def get_by_owner(self, user_id: UUID):
-        # Mixing query logic with repository logic
-        return session.query(MediaFile).filter(MediaFile.user_id == user_id).all()
+        # Session not injected — hidden state, untestable
+        return session.query(MediaFileORM).filter(MediaFileORM.user_id == user_id).all()
 ```
 
 **CORRECT:**
 ```python
-class MediaFileRepository:
-    async def get_by_owner(self, session: AsyncSession, user_id: UUID):
+class MediaFileStore:
+    async def find_by_owner(self, session: AsyncSession, user_id: UUID) -> list[MediaFile]:
         result = await session.execute(
-            select(MediaFile).where(MediaFile.user_id == user_id)
+            select(MediaFileORM).where(MediaFileORM.user_id == user_id)
         )
-        return result.scalars().all()
+        orm_list = result.scalars().all()
+        return [self.mapper.to_domain(orm) for orm in orm_list]
 ```
 
 #### Anti-Pattern 3: Missing Error Handling
 
 **WRONG:**
 ```python
-async def get_media_file(file_id: UUID):
+async def get_media_file(self, session: AsyncSession, file_id: UUID):
     # No error handling — what if file not found?
-    media = await media_repo.get_by_id(session, file_id)
+    media = await self.store.find_by_id(session, file_id)
     return media
 ```
 
 **CORRECT:**
 ```python
-async def get_media_file(file_id: UUID):
-    media = await media_repo.get_by_id(session, file_id)
+async def get_media_file(self, session: AsyncSession, file_id: UUID) -> MediaFileResponse:
+    media = await self.store.find_by_id(session, file_id)
     if not media:
-        raise ResourceNotFoundError(f"MediaFile {file_id} not found")
-    return media
+        raise MediaFileNotFoundError(f"MediaFile {file_id} not found")
+    return self.mapper.to_response(media)
 ```
 
 #### Anti-Pattern 4: Missing Auth on Protected Endpoints
@@ -322,23 +372,94 @@ GET /api/v1/media?skip=0&limit=20&sort=created_at&order=desc
   Response: { items: List[MediaFileResponse], total: int, skip: int, limit: int }
 ```
 
+#### Anti-Pattern 9: Framework Imports in the Domain Layer
+
+**WRONG:**
+```python
+# media/domain/entity/media_file.py
+from sqlmodel import SQLModel, Field    # ← ORM in domain — FORBIDDEN
+from fastapi import UploadFile           # ← HTTP framework in domain — FORBIDDEN
+
+class MediaFile(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    filename: str
+```
+
+**CORRECT:**
+```python
+# media/domain/entity/media_file.py
+from dataclasses import dataclass
+from uuid import UUID
+from media.domain.vo.file_name import FileName    # ← only domain VOs
+from media.domain.vo.mime_type import MimeType
+
+@dataclass
+class MediaFile:
+    id: UUID
+    owner_id: UUID
+    filename: FileName
+    mime_type: MimeType
+```
+
+- Rule: `{domain}/domain/` files must contain **zero** imports from `fastapi`, `sqlmodel`, `sqlalchemy`, `pydantic`, or any HTTP/ORM library.
+
+#### Anti-Pattern 10: Mapper Confusion — API Mapper vs Service Mapper
+
+Two separate mapper classes exist per domain and must not be mixed.
+
+**WRONG:**
+```python
+# Using the service mapper (ORM ↔ domain) inside the API layer
+@router.post("/media")
+async def upload(req: MediaFileCreateRequest):
+    entity = service_mapper.to_domain(req)   # ← service mapper in API layer
+    ...
+```
+
+**CORRECT:**
+```python
+# media/api/mapper/media_mapper.py  — converts API DTOs ↔ domain objects
+class MediaApiMapper:
+    def to_domain(self, req: MediaFileCreateRequest) -> MediaFileCreateCommand: ...
+    def to_response(self, entity: MediaFile) -> MediaFileResponse: ...
+
+# media/service/mapper/media_mapper.py  — converts ORM models ↔ domain objects
+class MediaServiceMapper:
+    def to_domain(self, orm: MediaFileORM) -> MediaFile: ...
+    def to_orm(self, entity: MediaFile) -> MediaFileORM: ...
+```
+
+- API mapper lives in `{domain}/api/mapper/` and touches only Pydantic DTOs + domain objects.
+- Service mapper lives in `{domain}/service/mapper/` and touches only ORM models + domain objects.
+
 ---
 
 ## Design Quality Checklist
 
 Before declaring a backend-design complete, verify:
 
-- [ ] **Scope**: All output_contract entries are covered by endpoints
-- [ ] **Schemas**: Every endpoint has request and response schemas defined
-- [ ] **Services**: Service methods use repositories, not direct DB access
-- [ ] **Repositories**: All methods are async
-- [ ] **Auth**: Protected endpoints use Depends(get_current_user)
-- [ ] **Exceptions**: Custom exception classes are defined for all error scenarios
-- [ ] **Naming**: All files, classes, methods, and fields follow conventions
-- [ ] **Anti-patterns**: No business logic in routers, no direct DB access outside repos
-- [ ] **File Structure**: All files are planned and don't conflict
-- [ ] **Tests**: Unit and integration test plans cover happy path and error cases
-- [ ] **Documentation**: Each endpoint, service, and repository has a description
+**Mandatory (every domain must have these four):**
+- [ ] **Entity** (`domain/entity/`): At least one domain entity defined as pure Python
+- [ ] **Facade** (`domain/facade/`): Facade interface defined; service layer calls only facade for domain logic
+- [ ] **Controller** (`api/controller/`): FastAPI router defined; no business logic inside handlers
+- [ ] **Store** (`service/store/`): Store class defined; all methods are `async def` with `AsyncSession` as first arg
+
+**Always verify:**
+- [ ] **Scope**: All output_contract entries are covered by at least one endpoint
+- [ ] **Domain Layer**: `{domain}/domain/` files contain zero imports from fastapi / sqlmodel / sqlalchemy / pydantic
+- [ ] **Auth**: All protected endpoints have `auth_required: true` and use `Depends(get_current_user)`
+- [ ] **Naming**: All included files, classes, methods, and fields follow DDD + snake_case / PascalCase conventions (Rule 7)
+- [ ] **Anti-patterns**: No business logic in routers; no ORM in domain layer; no direct DB access outside stores
+
+**Optional — verify only if included:**
+- [ ] **Value Objects** (`domain/vo/`): VOs are immutable and enforce validation on construction
+- [ ] **Domain Exceptions** (`domain/exception/`): Domain exceptions are distinct from HTTP exceptions
+- [ ] **Request DTOs** (`api/request/`): Each request DTO has concrete field types and validation rules
+- [ ] **Response DTOs** (`api/response/`): Each response DTO covers all fields returned by the endpoint
+- [ ] **API Mapper** (`api/mapper/`): `to_domain()` and `to_response()` both defined
+- [ ] **Service Mapper** (`service/mapper/`): `to_domain()` and `to_orm()` both defined
+- [ ] **Proxy** (`service/proxy/`): All proxy methods are `async def`
+- [ ] **Application Service**: Methods call only facade / store / proxy / mapper — no direct ORM operations
 
 ---
 
@@ -356,21 +477,24 @@ After Step 2, create a matrix:
 
 Every row must have a checkmark before writing.
 
-### Schema Usage Verification
+### DTO/Schema Usage Verification
 
-After Step 3, verify:
+After Step 4 (API Layer), verify:
 
-- [ ] Every schema used in an endpoint is defined in Step 3 output
+- [ ] Every request DTO used in an endpoint is defined in `{domain}/api/request/`
+- [ ] Every response DTO used in an endpoint is defined in `{domain}/api/response/`
 - [ ] No undefined schema references
-- [ ] All fields in each schema are concrete (no "something", "data", etc.)
+- [ ] All fields in each DTO are concrete (no "something", "data", etc.)
+- [ ] API mapper methods (`to_domain`, `to_response`) are defined for every DTO pair
 
-### Service/Repository Alignment
+### Service/Store Alignment
 
-After Step 5, verify:
+After Step 5 (Service Layer), verify:
 
-- [ ] Every service method that needs DB access calls a repository method
-- [ ] Every repository method is called by at least one service method (or is a custom query)
-- [ ] No service method directly manipulates ORM objects or sessions
+- [ ] Every store has at least one async CRUD method defined
+- [ ] If an application service is present: all DB access goes through the store, never direct ORM
+- [ ] If `service/mapper/` is present: `to_domain` and `to_orm` both defined for each entity
+- [ ] No service method calls `session.add()` / `session.commit()` directly
 
 ---
 

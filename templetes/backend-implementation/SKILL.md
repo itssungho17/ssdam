@@ -142,12 +142,33 @@ Before starting implementation, perform these checks:
 - [ ] Create required directories (src/, tests/, migrations/) if they don't exist
 - If project_root is not writable: **STOP** and report permission error
 
-**6. Check for file conflicts**
-- [ ] For each file in backend-design.file_structure, check if it already exists
-- [ ] If a file exists and was NOT created by a previous backend-implementation:
-  - **WARN** user: "File {filename} exists. Will not overwrite. Review before proceeding."
-  - Ask user for confirmation to proceed without overwriting
-- [ ] Allow overwriting of test files (tests/ directory can be modified)
+**6. Scan existing files and build UPDATE / CREATE plan**
+
+For every file listed in backend-design.file_structure, check whether it already exists at the target path.
+
+| File exists? | Same role / class name inside? | Action |
+|---|---|---|
+| No | — | **CREATE** — write the new file |
+| Yes | No matching class/function found | **APPEND** — add the new class/function to the existing file |
+| Yes | Matching class/function found | **UPDATE** — modify only the relevant class/function inside the existing file |
+
+**Rules:**
+- **NEVER create a new file with a different name if a file with the same role already exists at the target path.**
+- **NEVER leave the old class unchanged and add a duplicate alongside it.**
+- If a class named `UserService` already exists at `service/user_service.py`, modify that class — do NOT create `service/user_service_v2.py` or `service/user_service_new.py`.
+- If a method inside an existing class needs to change, edit only that method — leave all other methods intact.
+
+**How to detect "same role":**
+- Same file path as specified in backend-design.file_structure → it is the same file
+- Inside the file, look for a class/function whose name matches what backend-design expects → it is the same class/function
+
+**Log the plan before starting:**
+```
+File scan complete:
+  CREATE  src/domain/entity/Tag.java          (new file)
+  UPDATE  src/domain/entity/User.java         (file exists — will modify class User)
+  APPEND  src/service/store/dao/UserDAO.java  (file exists — will add method selectByEmail)
+```
 
 **7. Check for schema-design output (optional)**
 - [ ] Check if `.ssdam/{id}/output/design/schema-design.TSK-NNN.sql` exists
@@ -177,29 +198,30 @@ Execute the following 8 steps in order. Steps 1-7 implement code; Step 8 verifie
 - Build in-memory data structures (dicts/objects) for each component
 
 **Create implementation plan:**
-- Ordered list of files to create, in dependency order:
-  1. src/models/schemas.py (Pydantic schemas — no dependencies)
-  2. src/models/exceptions.py (Custom exceptions — no dependencies)
-  3. src/models/db.py (SQLModel ORM models — may depend on schemas)
-  4. src/repositories/ (Repository classes — depend on ORM models)
-  5. src/services/ (Service classes — depend on repositories)
-  6. src/middleware/auth.py (Auth middleware — depends on services)
-  7. src/api/v1/ (FastAPI routers — depend on services and schemas)
-  8. src/main.py (FastAPI app initialization — wires everything together)
-  9. migrations/ (Alembic migrations — if schema-design exists)
-  10. tests/fixtures/conftest.py (Pytest fixtures for testing)
-  11. tests/unit/ (Unit tests — test services and schemas)
-  12. tests/integration/api/ (Integration tests — test endpoints)
 
-**Log the plan to user:**
+For each file in backend-design.file_structure, apply the scan result from Pre-Execution Step 6 to tag each item as CREATE, UPDATE, or APPEND. Build the ordered plan:
+
 ```
 Implementation plan for TSK-NNN:
-  1. Create src/models/schemas.py (N Pydantic schemas)
-  2. Create src/models/exceptions.py (N custom exception classes)
-  3. Create src/models/db.py (N SQLModel ORM models)
-  4. Create src/repositories/ (N repository classes)
+  [CREATE] src/domain/entity/Tag.java                 — new entity class
+  [UPDATE] src/domain/entity/User.java                — add field `profileImageUrl`
+  [APPEND] src/service/store/dao/UserDAO.java         — add method `selectByEmail()`
+  [CREATE] src/service/store/UserStore.java           — new store class
+  [UPDATE] src/service/UserService.java               — update `createUser()` method
   ...
 ```
+
+**Dependency order (always follow regardless of CREATE/UPDATE):**
+1. Domain entities (`domain/entity/`)
+2. Domain facades (`domain/facade/`) — if present
+3. Request/Response DTOs (`api/request/`, `api/response/`) — if present
+4. DAO interfaces (`service/store/dao/`) — signatures only
+5. Store classes (`service/store/`)
+6. Application service (`service/`) — if present
+7. Controllers (`api/controller/`)
+
+**Critical rule — log before executing:**
+Print the full CREATE/UPDATE/APPEND plan and confirm there are no duplicate-role files before writing a single line of code.
 
 ---
 
@@ -245,6 +267,25 @@ project_root/tests/fixtures/
   ✓ tests/integration/
   ... (other directories)
 ```
+
+---
+
+### Universal Rule — Check Before Every Write
+
+> **This rule applies to Steps 3–15 (every step that writes code).**
+>
+> Before writing any file in each step:
+>
+> 1. **Check if the target file already exists.**
+> 2. If it **does not exist** → proceed with CREATE as described in the step.
+> 3. If it **exists** → read the file completely, then:
+>    - Find every class/function that the step intends to add or modify.
+>    - For each one:
+>      - **Already exists in the file** → edit only the changed lines; preserve everything else.
+>      - **Not yet in the file** → append it at the end of the file.
+>    - Do NOT rewrite the entire file. Do NOT rename the file.
+>
+> Violating this rule (e.g., creating `MediaService2.java` alongside `MediaService.java`) is a critical error and must be avoided.
 
 ---
 
@@ -1672,7 +1713,8 @@ Code is ready for review and deployment.
 | **Invalid YAML syntax** | YAML parser error | Stop execution. Report line number and parse error. |
 | **backend-design.TSK-NNN.md not found** | Prerequisite file missing | Stop execution. Run /backend-design first. |
 | **Project root not writable** | Permission denied on project_root | Stop execution. Report permission error. |
-| **File conflict** | Existing file would be overwritten | Warn user. Ask for confirmation. Only overwrite tests/. |
+| **File already exists** | Target file path exists | READ the file first. UPDATE the existing class/function in place. NEVER create a duplicate file with a different name. |
+| **Class already exists in file** | Class with same name found in existing file | Edit only the changed methods/fields. Do NOT add a second class with a different name. |
 | **Malformed backend-design** | Missing sections or invalid structure | Stop execution. Report which section is invalid. |
 | **Database connection failed** | Cannot connect to database | Report error. Suggest checking DATABASE_URL in .env. |
 | **Test failures** | pytest returned non-zero exit code | Report which tests failed. Do not consider implementation complete. |
@@ -1684,7 +1726,29 @@ Code is ready for review and deployment.
 
 1. **This is autonomous code execution** — the agent writes code directly to project_root, not to a design document.
 
-2. **Dependency order matters** — implement files in this order:
+2. **ALWAYS scan before writing** — before creating or editing any file, check whether it already exists at the exact target path. This is mandatory, not optional.
+
+   ```
+   Target path exists?
+   ├── NO  → CREATE the file from scratch
+   └── YES → Read the file first, then:
+             ├── Class/function already exists → UPDATE it in place (edit only what changed)
+             └── Class/function not found      → APPEND it to the existing file
+   ```
+
+   **What "UPDATE in place" means:**
+   - Open the existing file
+   - Find the specific class or function by name
+   - Edit only the fields, methods, or lines that need to change
+   - Leave all other classes, methods, imports, and comments untouched
+
+   **What NOT to do:**
+   - ❌ Create `UserService_new.java` because `UserService.java` already exists
+   - ❌ Create `User_v2.java` because `User.java` already exists
+   - ❌ Add a duplicate class `UserDAO` to a new file when `UserDAO` already exists
+   - ❌ Overwrite an entire file when only one method needs to change
+
+3. **Dependency order matters** — implement files in this order:
    - Schemas and exceptions first (no dependencies)
    - ORM models next (depend on schemas)
    - Repositories next (depend on ORM models)
